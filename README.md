@@ -2,7 +2,9 @@
 [![go report card](https://goreportcard.com/badge/github.com/retr0h/tlock?style=for-the-badge)](https://goreportcard.com/report/github.com/retr0h/tlock)
 [![license](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge)](LICENSE)
 [![build](https://img.shields.io/github/actions/workflow/status/retr0h/tlock/go.yml?style=for-the-badge)](https://github.com/retr0h/tlock/actions/workflows/go.yml)
+[![release](https://img.shields.io/github/actions/workflow/status/retr0h/tlock/release.yml?style=for-the-badge&label=release)](https://github.com/retr0h/tlock/actions/workflows/release.yml)
 [![powered by](https://img.shields.io/badge/powered%20by-goreleaser-green.svg?style=for-the-badge)](https://github.com/goreleaser)
+[![just](https://img.shields.io/badge/just-command%20runner-blue?style=for-the-badge)](https://github.com/casey/just)
 [![conventional commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org)
 ![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)
 [![go reference](https://img.shields.io/badge/go-reference-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://pkg.go.dev/github.com/retr0h/tlock)
@@ -55,14 +57,17 @@ sudo mv tlock /usr/local/bin/
 Run directly:
 
 ```bash
-tlock
+tlock                                        # Password prompt only
+tlock --screensaver                          # Worms after 30s idle (default)
+tlock --screensaver --screensaver-delay 0    # Worms immediately
+tlock --screensaver --screensaver-delay 60   # Worms after 1 min idle
 ```
 
 As a tmux lock command:
 
 ```tmux
 # ~/.tmux.conf
-set -g lock-command "tlock"
+set -g lock-command "tlock --screensaver"
 set -g lock-after-time 1800    # Lock after 30 min idle
 bind ^X lock-server            # Ctrl+X to lock now
 ```
@@ -81,6 +86,19 @@ All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authenti
 - 🍎 macOS (uses LocalAuthentication.framework and PAM)
 - 🐹 Go 1.21+ with CGo enabled
 - 🖐️ Touch ID hardware (optional — password fallback always available)
+
+## 💡 Inspiration
+
+tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11 screen locker from the 90s that shipped with most Unix workstations. The worm screensaver mode (`xlock -mode worm`) by David Bagley was a staple of SGI Indigos and Sun workstations in dimly lit server rooms everywhere.
+
+## 🔀 Alternatives
+
+| Tool | Platform | Description |
+|------|----------|-------------|
+| [xlock / xlockmore](https://github.com/zevlg/xlockmore) | X11 / Unix | The OG screen locker with 50+ screensaver modes |
+| [vlock](https://github.com/hwhw/vlock) | Linux | Virtual console lock — locks Linux TTYs |
+| [bashlock](https://github.com/njhartwell/bashlock) | macOS / Linux | Simple bash-based terminal lock |
+| [slock](https://tools.suckless.org/slock/) | X11 | Suckless screen locker — minimal, no frills |
 
 ## 🗺️ Roadmap
 

@@ -39,8 +39,14 @@ go run main.go         # Run directly (will lock terminal!)
 # Direct
 tlock
 
+# With screensaver (worms start after 30s idle)
+tlock --screensaver
+
+# Screensaver immediately
+tlock --screensaver --screensaver-delay 0
+
 # As tmux lock-command
-set -g lock-command "tlock"
+set -g lock-command "tlock --screensaver"
 set -g lock-after-time 1800
 bind ^X lock-server
 ```
