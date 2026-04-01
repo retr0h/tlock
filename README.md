@@ -103,10 +103,15 @@ bind ^X lock-server            # Ctrl+X to lock now
 
 ## ⚙️ How It Works
 
-1. Terminal locks and shows the passphrase prompt with a blinking cursor
-2. Type your macOS password and press Enter to unlock
-3. Press **Esc** to switch to Touch ID — authenticate with your fingerprint
-4. Wrong password? **ACCESS DENIED** — back to the prompt. Try again.
+tlock brings the classic [xlock](https://linux.die.net/man/1/xlock) experience to your terminal — an animated screensaver that kicks in when your terminal is locked, with authentication required to dismiss it.
+
+1. 🐍 **Screensaver mode** (`--snake`): xlock-style worms animate across the screen
+2. ⌨️ **Any keypress** pauses the screensaver and shows the passphrase prompt
+3. 🔑 **Type your macOS password** and press Enter to unlock
+4. 🖐️ **Press Esc** to switch to Touch ID — authenticate with your fingerprint
+5. 🚫 Wrong password? **ACCESS DENIED** — back to the screensaver
+
+Without `--snake` or `--screensaver`, tlock shows the passphrase prompt directly.
 
 All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authentication. 🔐
 
@@ -132,7 +137,7 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 ## 🗺️ Roadmap
 
 - [x] 🐛 xlock-style worm screensaver with fading trails
-- [ ] 🔤 Cycling figurine text screensaver
+- [ ] 🔤 Additional screensaver modes (cycling figurine text, matrix rain, etc.)
 - [ ] ⚙️ Configuration file (`~/.config/tlock/config.yaml`)
 - [ ] 🔐 1Password CLI integration
 
