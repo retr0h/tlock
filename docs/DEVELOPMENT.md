@@ -50,9 +50,9 @@ main.go
 │   ├── authenticate_touchid()  — biometric auth via LocalAuthentication.framework
 │   └── authenticate_password() — password auth via PAM
 ├── Styles (lipgloss)
-│   ├── lockTitleStyle          — bold purple for "LOCKED"
-│   ├── subtitleStyle           — gray for hostname/hints
-│   ├── promptStyle             — teal for auth prompts
+│   ├── lockTitleStyle          — bold purple
+│   ├── subtitleStyle           — gray for hints
+│   ├── promptStyle             — teal for prompts
 │   ├── errorStyle              — bold red for failures
 │   ├── msgBoxStyle             — glitch border box (teal)
 │   └── errBoxStyle             — glitch border box (red)
@@ -63,9 +63,9 @@ main.go
 │   ├── centerBlock()           — center multi-line block
 │   └── getTermSize()           — terminal dimensions
 ├── Rendering
-│   ├── renderLockScreen()      — main lock screen display
+│   ├── renderLockScreen()      — clears screen
 │   ├── renderMessage()         — boxed status messages
-│   └── readPassword()          — password input with blinking cursor
+│   └── readPassword()          — password input with blinking cursor (Esc → Touch ID)
 └── main()                      — entry point, auth loop
 ```
 

@@ -23,6 +23,11 @@ ____________   _____________________
 
 A terminal lock screen for macOS that uses **Touch ID** for biometric unlock with **macOS password** fallback. Drop it into tmux as your `lock-command` and walk away.
 
+<p align="center">
+  <a href="asset/passphrase.png"><img src="asset/passphrase.png" width="400" alt="Passphrase Prompt"></a>
+  <a href="asset/touchid.png"><img src="asset/touchid.png" width="400" alt="Touch ID Prompt"></a>
+</p>
+
 ## ✨ Features
 
 - 🖐️ **Touch ID** fingerprint unlock via macOS LocalAuthentication
@@ -66,11 +71,10 @@ bind ^X lock-server            # Ctrl+X to lock now
 
 ## ⚙️ How It Works
 
-1. Terminal clears, enters raw mode, shows the lock screen
-2. Press any key to begin unlock
-3. 🖐️ Touch ID prompt appears — authenticate with your fingerprint
-4. If Touch ID fails or is unavailable, falls back to 🔑 password prompt
-5. Wrong password? Back to the lock screen. Try again.
+1. Terminal locks and shows the passphrase prompt with a blinking cursor
+2. Type your macOS password and press Enter to unlock
+3. Press **Esc** to switch to Touch ID — authenticate with your fingerprint
+4. Wrong password? **ACCESS DENIED** — back to the prompt. Try again.
 
 All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authentication. 🔐
 

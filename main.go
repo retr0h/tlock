@@ -143,20 +143,7 @@ func getTermSize() (int, int) {
 }
 
 func renderLockScreen() {
-	w, h := getTermSize()
 	clearScreen()
-
-	title := lockTitleStyle.Render("LOCKED")
-	hostname, _ := os.Hostname()
-	host := subtitleStyle.Render(hostname)
-	hint := subtitleStyle.Render("Press any key to unlock")
-
-	mid := h / 2
-	fmt.Printf("\033[%d;0H", mid-1)
-	fmt.Printf("%s\r\n", centerText(title, w))
-	fmt.Printf("%s\r\n", centerText(host, w))
-	fmt.Print("\r\n")
-	fmt.Printf("%s\r\n", centerText(hint, w))
 }
 
 var glitchBorder = lipgloss.Border{
@@ -174,6 +161,7 @@ var msgBoxStyle = lipgloss.NewStyle().
 	Border(glitchBorder).
 	BorderForeground(teal).
 	Padding(1, 4).
+	Width(50).
 	Foreground(teal).
 	Bold(true)
 
@@ -181,6 +169,7 @@ var errBoxStyle = lipgloss.NewStyle().
 	Border(glitchBorder).
 	BorderForeground(red).
 	Padding(1, 4).
+	Width(50).
 	Foreground(red).
 	Bold(true)
 
@@ -202,20 +191,27 @@ func renderMessage(msg string, style lipgloss.Style) {
 }
 
 func readPassword() string {
-	w, h := getTermSize()
 	clearScreen()
 
-	prefix := "Password: "
+	prefix := subtitleStyle.Render("ENTER PASSPHRASE") + "\r\n"
 	var pw []byte
 
 	// Blinking cursor state
 	cursorVisible := true
 	stopBlink := make(chan struct{})
 	blinkBlock := lipgloss.NewStyle().Foreground(teal).Render("\u2588")
+	dimBlock := lipgloss.NewStyle().Foreground(gray).Render("\u2591")
+
+	hint := subtitleStyle.Render("ESC: Touch ID")
 
 	redrawPrompt := func() {
+		w, h := getTermSize()
 		clearScreen()
-		stars := strings.Repeat("*", len(pw))
+
+		stars := ""
+		for range pw {
+			stars += dimBlock
+		}
 		var cursor string
 		if cursorVisible {
 			cursor = blinkBlock
@@ -227,12 +223,17 @@ func readPassword() string {
 		lines := strings.Split(box, "\n")
 		startRow := (h - len(lines)) / 2
 		fmt.Printf("\033[%d;0H", startRow)
-		fmt.Printf("%s", centerBlock(box, w))
+		fmt.Printf("%s\r\n", centerBlock(box, w))
+		fmt.Print("\r\n")
+		fmt.Printf("%s", centerText(hint, w))
 	}
 
-	redrawPrompt()
+	// Handle resize
+	sigwinch := make(chan os.Signal, 1)
+	signal.Notify(sigwinch, syscall.SIGWINCH)
+	defer signal.Stop(sigwinch)
 
-	// Blink goroutine
+	// Start blinking and resize handling
 	go func() {
 		ticker := time.NewTicker(500 * time.Millisecond)
 		defer ticker.Stop()
@@ -240,12 +241,16 @@ func readPassword() string {
 			select {
 			case <-stopBlink:
 				return
+			case <-sigwinch:
+				redrawPrompt()
 			case <-ticker.C:
 				cursorVisible = !cursorVisible
 				redrawPrompt()
 			}
 		}
 	}()
+
+	redrawPrompt()
 
 	buf := make([]byte, 1)
 	for {
@@ -255,6 +260,9 @@ func readPassword() string {
 		}
 		b := buf[0]
 		switch {
+		case b == 27: // Esc — switch to Touch ID
+			close(stopBlink)
+			return "\x1b"
 		case b == 13 || b == 10: // Enter
 			close(stopBlink)
 			return string(pw)
@@ -295,36 +303,20 @@ func main() {
 	signal.Notify(sigwinch, syscall.SIGWINCH)
 
 	for {
-		renderLockScreen()
-
-		// Wait for keypress or resize
-		keyCh := make(chan byte, 1)
-		go func() {
-			b := make([]byte, 1)
-			os.Stdin.Read(b)
-			keyCh <- b[0]
-		}()
-
-	waitLoop:
-		for {
-			select {
-			case <-sigwinch:
-				renderLockScreen()
-			case <-keyCh:
-				break waitLoop
-			}
-		}
-
-		// Try Touch ID if available (e.g. lid open, hardware present)
-		if C.touchid_available() == 1 {
-			renderMessage("Authenticating with Touch ID...", promptStyle)
-			if C.authenticate_touchid() == 1 {
-				return
-			}
-		}
-
-		// Fall back to password
+		// Password prompt is the default lock screen
 		pw := readPassword()
+
+		// Esc pressed — switch to Touch ID
+		if pw == "\x1b" {
+			if C.touchid_available() == 1 {
+				if C.authenticate_touchid() == 1 {
+					return
+				}
+			}
+			continue
+		}
+
+		// Verify password via PAM
 		cpw := C.CString(pw)
 		result := C.authenticate_password(cpw)
 		C.free(unsafe.Pointer(cpw))
@@ -333,7 +325,7 @@ func main() {
 			return
 		}
 
-		renderMessage("Authentication failed", errorStyle)
+		renderMessage("ACCESS DENIED", errorStyle)
 		time.Sleep(1 * time.Second)
 	}
 }

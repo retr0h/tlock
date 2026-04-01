@@ -19,12 +19,12 @@ Single-binary Go program using CGo for macOS system integration:
 
 - Uses raw terminal mode — all output needs `\r\n` not just `\n`
 - Signals (SIGINT, SIGTERM, SIGTSTP) are ignored to prevent bypass
-- SIGWINCH is handled for terminal resize
 - Touch ID is async (Objective-C block callback), bridged to sync via `dispatch_semaphore`
 - `touchid_available()` checks biometric hardware before prompting
 - PAM auth uses the "login" service with the current user
 - Glitch-style unicode border (`\u2591\u2592\u2593\u2588`) for auth prompts
 - Blinking block cursor (`\u2588`) on password input, 500ms interval
+- Password prompt is the default lock screen — Esc switches to Touch ID
 
 ## Building
 
