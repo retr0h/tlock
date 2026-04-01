@@ -1,0 +1,6 @@
+.coverage/
+.worktrees/
+dist/
+docs/node_modules/
+docs/bun.lock
+.just/remote/
