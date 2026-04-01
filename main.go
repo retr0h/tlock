@@ -451,7 +451,7 @@ func eraseBlock(gx, gy int) {
 	}
 }
 
-func runWormDemo() bool {
+func runWormDemo(numWorms int) bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -475,9 +475,43 @@ func runWormDemo() bool {
 		}
 	}
 
-	// Worm lengths (in grid cells) — curated mix
-	wormLengths := []int{8, 12, 18, 10, 22, 14, 6, 16, 9, 20, 11, 13, 17}
-	numWorms := len(wormLengths)
+	// Auto-scale worm count based on terminal area if not specified
+	gridArea := gridW * gridH
+	if numWorms <= 0 {
+		switch {
+		case gridArea < 800: // ~110x40 or smaller
+			numWorms = 4
+		case gridArea < 1500: // ~150x60
+			numWorms = 7
+		case gridArea < 3000: // ~200x80
+			numWorms = 10
+		default: // large terminals
+			numWorms = 13
+		}
+	}
+
+	// Generate curated worm lengths — varied but deliberate
+	baseLengths := []int{8, 12, 18, 10, 22, 14, 6, 16, 9, 20, 11, 13, 17, 15, 19, 7, 24}
+	wormLengths := make([]int, numWorms)
+	for j := range wormLengths {
+		wormLengths[j] = baseLengths[j%len(baseLengths)]
+	}
+
+	// Shuffle colors and assign — no two adjacent worms share a color
+	shuffled := make([]lipgloss.Color, len(wormColors))
+	copy(shuffled, wormColors)
+	rand.Shuffle(len(shuffled), func(a, b int) { shuffled[a], shuffled[b] = shuffled[b], shuffled[a] })
+	assignedColors := make([]lipgloss.Color, numWorms)
+	colorIdx := 0
+	for j := range assignedColors {
+		assignedColors[j] = shuffled[colorIdx%len(shuffled)]
+		colorIdx++
+		// If next worm would get same color as this one, skip ahead
+		if j < numWorms-1 && colorIdx%len(shuffled) == (colorIdx-1)%len(shuffled) {
+			colorIdx++
+		}
+	}
+
 	worms := make([]worm, numWorms)
 
 	// Spawn worms at non-overlapping grid positions
@@ -531,7 +565,7 @@ func runWormDemo() bool {
 			bx = ((bx % gridW) + gridW) % gridW
 			by = ((by % gridH) + gridH) % gridH
 			body[j] = point{bx, by}
-			grid[by][bx] = gridCell{state: cellBody, wormIdx: i, color: wormColors[i%len(wormColors)]}
+			grid[by][bx] = gridCell{state: cellBody, wormIdx: i, color: assignedColors[i]}
 		}
 
 		worms[i] = worm{
@@ -539,7 +573,7 @@ func runWormDemo() bool {
 			head:     0,
 			length:   bodyLen,
 			dir:      dir,
-			color:    wormColors[i%len(wormColors)],
+			color:    assignedColors[i],
 			turnCool: rand.Intn(8) + 6,
 			minRun:   rand.Intn(6) + 4,
 		}
@@ -730,6 +764,7 @@ func runWormDemo() bool {
 
 func main() {
 	snake := flag.Bool("snake", false, "Screensaver on immediately (shortcut for --screensaver --screensaver-delay 0)")
+	snakeCount := flag.Int("snake-count", 0, "Number of worms (0 = auto based on terminal size)")
 	screensaver := flag.Bool("screensaver", false, "Enable xlock-style worm screensaver")
 	screensaverDelay := flag.Int("screensaver-delay", 30, "Seconds idle before screensaver starts (0 = immediate)")
 	flag.Parse()
@@ -758,7 +793,7 @@ func main() {
 	for {
 		if *screensaver && *screensaverDelay == 0 {
 			// Screensaver immediately — worms run, keypress triggers auth
-			if runWormDemo() {
+			if runWormDemo(*snakeCount) {
 				return
 			}
 		} else if *screensaver {
@@ -779,7 +814,7 @@ func main() {
 				continue
 			case <-timer.C:
 				// Timeout — switch to screensaver
-				if runWormDemo() {
+				if runWormDemo(*snakeCount) {
 					return
 				}
 				continue
