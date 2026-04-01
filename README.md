@@ -58,8 +58,8 @@ Run directly:
 
 ```bash
 tlock                                        # Password prompt only
-tlock --screensaver                          # Worms after 30s idle (default)
-tlock --screensaver --screensaver-delay 0    # Worms immediately
+tlock --snake                                # Worms immediately
+tlock --screensaver                          # Worms after 30s idle (default delay)
 tlock --screensaver --screensaver-delay 60   # Worms after 1 min idle
 ```
 
@@ -67,7 +67,7 @@ As a tmux lock command:
 
 ```tmux
 # ~/.tmux.conf
-set -g lock-command "tlock --screensaver"
+set -g lock-command "tlock --snake"
 set -g lock-after-time 1800    # Lock after 30 min idle
 bind ^X lock-server            # Ctrl+X to lock now
 ```

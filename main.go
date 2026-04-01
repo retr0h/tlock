@@ -451,7 +451,7 @@ func eraseBlock(gx, gy int) {
 	}
 }
 
-func runWormDemo() {
+func runWormDemo() bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -591,9 +591,6 @@ func runWormDemo() {
 	for {
 		select {
 		case key := <-keyCh:
-			if key == 'q' || key == 'Q' {
-				return
-			}
 			// Ignore non-printable (tmux focus events)
 			if key < 32 && key != 13 && key != 10 {
 				startKeyReader()
@@ -602,7 +599,7 @@ func runWormDemo() {
 			// Freeze worms — show password prompt
 			pw := readPasswordOverlay(true)
 			if handleAuth(pw) {
-				return // authenticated — unlock
+				return true // authenticated — unlock
 			}
 			fullRedraw()
 			startKeyReader()
@@ -732,8 +729,9 @@ func runWormDemo() {
 }
 
 func main() {
+	snake := flag.Bool("snake", false, "Screensaver on immediately (shortcut for --screensaver --screensaver-delay 0)")
 	screensaver := flag.Bool("screensaver", false, "Enable xlock-style worm screensaver")
-	screensaverDelay := flag.Int("screensaver-delay", 30, "Seconds before screensaver starts (0 = immediate)")
+	screensaverDelay := flag.Int("screensaver-delay", 30, "Seconds idle before screensaver starts (0 = immediate)")
 	flag.Parse()
 
 	fd := int(os.Stdin.Fd())
@@ -751,12 +749,18 @@ func main() {
 	// Ignore signals that could bypass the lock
 	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGTSTP)
 
-	_ = screensaverDelay // used below
+	// --snake is a shortcut: screensaver on, delay 0
+	if *snake {
+		*screensaver = true
+		*screensaverDelay = 0
+	}
 
 	for {
 		if *screensaver && *screensaverDelay == 0 {
 			// Screensaver immediately — worms run, keypress triggers auth
-			runWormDemo()
+			if runWormDemo() {
+				return
+			}
 		} else if *screensaver {
 			// Show password prompt, start screensaver after delay if idle
 			// Run password prompt with a timeout
@@ -775,9 +779,9 @@ func main() {
 				continue
 			case <-timer.C:
 				// Timeout — switch to screensaver
-				// Note: readPasswordOverlay is blocking on stdin,
-				// the worm demo will take over input
-				runWormDemo()
+				if runWormDemo() {
+					return
+				}
 				continue
 			}
 		} else {
