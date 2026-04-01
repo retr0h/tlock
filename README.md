@@ -50,7 +50,7 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 
 ## 📦 Install
 
-### Download binary (macOS)
+### ⬇️ Download binary (macOS)
 
 Grab the latest release for your architecture:
 
@@ -65,14 +65,14 @@ chmod +x tlock
 sudo mv tlock /usr/local/bin/
 ```
 
-### Verify checksum
+### 🔏 Verify checksum
 
 ```bash
 curl -sL https://github.com/retr0h/tlock/releases/latest/download/checksums.txt -o checksums.txt
 shasum -a 256 -c checksums.txt --ignore-missing
 ```
 
-### Build from source
+### 🔨 Build from source
 
 ```bash
 git clone https://github.com/retr0h/tlock.git
@@ -131,7 +131,7 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 
 ## 🗺️ Roadmap
 
-- [ ] 🐛 xlock-style worm screensaver with fading trails
+- [x] 🐛 xlock-style worm screensaver with fading trails
 - [ ] 🔤 Cycling figurine text screensaver
 - [ ] ⚙️ Configuration file (`~/.config/tlock/config.yaml`)
 - [ ] 🔐 1Password CLI integration
