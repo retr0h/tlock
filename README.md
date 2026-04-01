@@ -10,18 +10,18 @@
 [![go reference](https://img.shields.io/badge/go-reference-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://pkg.go.dev/github.com/retr0h/tlock)
 ![github commit activity](https://img.shields.io/github/commit-activity/m/retr0h/tlock?style=for-the-badge)
 
-# tlock
-
-```
+<h1 align="center">
+<pre>
 ____________   _____________________
 7      77  7   7     77     77  7  7
 !__  __!|  |   |  7  ||  ___!|   __!
   7  7  |  !___|  |  ||  7___|     |
   |  |  |     7|  !  ||     7|  7  |
   !__!  !_____!!_____!!_____!!__!__!
-```
+</pre>
+</h1>
 
-🔒 Lock your terminal. Unlock with your fingerprint.
+<p align="center">🔒 Lock your terminal. Unlock with your fingerprint.</p>
 
 A terminal lock screen for macOS that uses **Touch ID** for biometric unlock with **macOS password** fallback. Drop it into tmux as your `lock-command` and walk away.
 
