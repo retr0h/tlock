@@ -1,3 +1,5 @@
+// Package main implements tlock, a terminal lock screen for macOS with
+// Touch ID and password authentication.
 package main
 
 /*
@@ -129,7 +131,7 @@ func centerText(text string, width int) string {
 
 func centerBlock(block string, width int) string {
 	lines := strings.Split(block, "\n")
-	var result []string
+	result := make([]string, 0, len(lines))
 	for _, line := range lines {
 		result = append(result, centerText(line, width))
 	}
@@ -387,10 +389,10 @@ const (
 )
 
 type gridCell struct {
-	state   int
-	wormIdx int
+	state    int
+	wormIdx  int
 	trailAge int
-	color   lipgloss.Color
+	color    lipgloss.Color
 }
 
 type worm struct {
@@ -399,8 +401,8 @@ type worm struct {
 	length   int     // current drawn length (grows from 0 to cap)
 	dir      int     // 0=up, 1=right, 2=down, 3=left
 	color    lipgloss.Color
-	turnCool int     // ticks before next turn allowed
-	minRun   int     // minimum straight cells before turning
+	turnCool int // ticks before next turn allowed
+	minRun   int // minimum straight cells before turning
 }
 
 // Retro phosphor CRT palette
@@ -421,8 +423,10 @@ var wormColors = []lipgloss.Color{
 }
 
 // Direction deltas: up, right, down, left (cardinal only, in grid coords)
-var dx = []int{0, 1, 0, -1}
-var dy = []int{-1, 0, 1, 0}
+var (
+	dx = []int{0, 1, 0, -1}
+	dy = []int{-1, 0, 1, 0}
+)
 
 // Trail fade stages
 var trailBlocks = []string{"\u2588", "\u2593", "\u2592", "\u2591"}
@@ -500,7 +504,10 @@ func runWormDemo(numWorms int) bool {
 	// Shuffle colors and assign — no two adjacent worms share a color
 	shuffled := make([]lipgloss.Color, len(wormColors))
 	copy(shuffled, wormColors)
-	rand.Shuffle(len(shuffled), func(a, b int) { shuffled[a], shuffled[b] = shuffled[b], shuffled[a] })
+	rand.Shuffle(
+		len(shuffled),
+		func(a, b int) { shuffled[a], shuffled[b] = shuffled[b], shuffled[a] },
+	)
 	assignedColors := make([]lipgloss.Color, numWorms)
 	colorIdx := 0
 	for j := range assignedColors {
@@ -525,7 +532,7 @@ func runWormDemo(numWorms int) bool {
 		for attempts := 0; attempts < 500; attempts++ {
 			sx = rand.Intn(gridW-4) + 2
 			sy = rand.Intn(gridH-4) + 2
-			clear := true
+			open := true
 			// Check the full body line + 1 cell padding around it
 			for j := -1; j <= bodyLen; j++ {
 				for pad := -1; pad <= 1; pad++ {
@@ -539,20 +546,20 @@ func runWormDemo(numWorms int) bool {
 					}
 					if cx < 0 || cx >= gridW || cy < 0 || cy >= gridH {
 						if j >= 0 && j < bodyLen {
-							clear = false
+							open = false
 						}
 						continue
 					}
 					if grid[cy][cx].state != cellEmpty {
-						clear = false
+						open = false
 						break
 					}
 				}
-				if !clear {
+				if !open {
 					break
 				}
 			}
-			if clear {
+			if open {
 				break
 			}
 		}
@@ -587,8 +594,9 @@ func runWormDemo(numWorms int) bool {
 	startKeyReader := func() {
 		go func() {
 			buf := make([]byte, 1)
-			os.Stdin.Read(buf)
-			keyCh <- buf[0]
+			if _, err := os.Stdin.Read(buf); err == nil {
+				keyCh <- buf[0]
+			}
 		}()
 	}
 	startKeyReader()
@@ -763,10 +771,18 @@ func runWormDemo(numWorms int) bool {
 }
 
 func main() {
-	snake := flag.Bool("snake", false, "Screensaver on immediately (shortcut for --screensaver --screensaver-delay 0)")
+	snake := flag.Bool(
+		"snake",
+		false,
+		"Screensaver on immediately (shortcut for --screensaver --screensaver-delay 0)",
+	)
 	snakeCount := flag.Int("snake-count", 0, "Number of worms (0 = auto based on terminal size)")
 	screensaver := flag.Bool("screensaver", false, "Enable xlock-style worm screensaver")
-	screensaverDelay := flag.Int("screensaver-delay", 30, "Seconds idle before screensaver starts (0 = immediate)")
+	screensaverDelay := flag.Int(
+		"screensaver-delay",
+		30,
+		"Seconds idle before screensaver starts (0 = immediate)",
+	)
 	flag.Parse()
 
 	fd := int(os.Stdin.Fd())
@@ -775,7 +791,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to set raw mode: %v\n", err)
 		os.Exit(1)
 	}
-	defer term.Restore(fd, oldState)
+	defer func() { _ = term.Restore(fd, oldState) }()
 
 	hideCursor()
 	defer showCursor()
