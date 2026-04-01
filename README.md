@@ -50,8 +50,22 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 
 ## 📦 Install
 
-> **Note:** tlock requires CGo and macOS frameworks (LocalAuthentication, PAM),
-> so it must be built from source on a Mac.
+### Download binary (macOS)
+
+Grab the latest release for your architecture:
+
+```bash
+# Apple Silicon (M1/M2/M3/M4)
+curl -sL https://github.com/retr0h/tlock/releases/latest/download/tlock_$(curl -sL https://api.github.com/repos/retr0h/tlock/releases/latest | grep tag_name | cut -d '"' -f4 | tr -d v)_darwin_arm64 -o tlock
+
+# Intel Mac
+curl -sL https://github.com/retr0h/tlock/releases/latest/download/tlock_$(curl -sL https://api.github.com/repos/retr0h/tlock/releases/latest | grep tag_name | cut -d '"' -f4 | tr -d v)_darwin_amd64 -o tlock
+
+chmod +x tlock
+sudo mv tlock /usr/local/bin/
+```
+
+### Build from source
 
 ```bash
 git clone https://github.com/retr0h/tlock.git
