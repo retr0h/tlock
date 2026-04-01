@@ -25,13 +25,18 @@ ____________   _____________________
 
 A terminal lock screen for macOS that uses **Touch ID** for biometric unlock with **macOS password** fallback. Drop it into tmux as your `lock-command` and walk away.
 
-<p align="center">
-  <a href="asset/screensaver.png"><img src="asset/screensaver.png" width="30%" alt="Worm Screensaver"></a>
-  &nbsp;&nbsp;
-  <a href="asset/passphrase.png"><img src="asset/passphrase.png" width="30%" alt="Passphrase Prompt"></a>
-  &nbsp;&nbsp;
-  <a href="asset/touchid.png"><img src="asset/touchid.png" width="30%" alt="Touch ID Prompt"></a>
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="33%"><a href="asset/screensaver.png"><img src="asset/screensaver.png" width="100%" alt="Worm Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/passphrase.png"><img src="asset/passphrase.png" width="100%" alt="Passphrase Prompt"></a></td>
+    <td align="center" width="33%"><a href="asset/touchid.png"><img src="asset/touchid.png" width="100%" alt="Touch ID Prompt"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Screensaver</sub></td>
+    <td align="center"><sub>Passphrase</sub></td>
+    <td align="center"><sub>Touch ID</sub></td>
+  </tr>
+</table>
 
 ## ✨ Features
 
