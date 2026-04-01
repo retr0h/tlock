@@ -65,6 +65,13 @@ chmod +x tlock
 sudo mv tlock /usr/local/bin/
 ```
 
+### Verify checksum
+
+```bash
+curl -sL https://github.com/retr0h/tlock/releases/latest/download/checksums.txt -o checksums.txt
+shasum -a 256 -c checksums.txt --ignore-missing
+```
+
 ### Build from source
 
 ```bash
