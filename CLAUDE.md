@@ -10,9 +10,17 @@ tlock is a terminal lock program for macOS written in Go. It locks the terminal 
 
 Single-binary Go program using CGo for macOS system integration:
 
-- **`main.go`** - Entry point, terminal handling, lock screen UI, auth flow
+- **`main.go`** - Entry point, flag parsing, terminal setup, screensaver dispatch
+- **`terminal.go`** - Terminal utilities (clear, cursor, centering, lock icon, resize)
+- **`auth.go`** - CGo Touch ID + PAM authentication, password overlay
+- **`style.go`** - Lipgloss styles, color palette, message rendering
+- **`grid.go`** - Grid cell system (3x2 chars), block drawing, phosphor colors
+- **`screensaver.go`** - Screensaver interface, factory registry, random selection
+- **`screensaver_worm.go`** - Worm/snake screensaver (xlock-style)
+- **`screensaver_dvd.go`** - Bouncing padlock screensaver
+- **`screensaver_pipes.go`** - Growing pipes screensaver
 - **CGo** - Touch ID via `LocalAuthentication.framework`, password via PAM (`pam_authenticate`)
-- **lipgloss** - Terminal styling (purple/teal/gray color palette)
+- **lipgloss** - Terminal styling (teal/gray/red color palette)
 - **golang.org/x/term** - Raw terminal mode, terminal size detection
 
 ## Key Technical Details
@@ -30,7 +38,7 @@ Single-binary Go program using CGo for macOS system integration:
 
 ```bash
 go build -o tlock .    # Build binary
-go run main.go         # Run directly (will lock terminal!)
+go run . --snake       # Run directly (will lock terminal!)
 ```
 
 ## Usage
@@ -39,17 +47,18 @@ go run main.go         # Run directly (will lock terminal!)
 # Direct (password prompt only)
 tlock
 
-# Worms immediately
-tlock --snake
+# Screensavers (immediate)
+tlock --snake                  # Worms
+tlock --pipes                  # Growing pipes
+tlock --dvd                    # Bouncing padlock
+tlock --random                 # Random pick
+tlock --random --cycle 5m      # Rotate every 5 min
 
-# Screensaver after 30s idle
-tlock --screensaver
-
-# Custom delay
-tlock --screensaver --screensaver-delay 60
+# With idle delay
+tlock --snake --delay 30s      # Worms after 30s idle
 
 # As tmux lock-command
-set -g lock-command "tlock --snake"
+set -g lock-command "tlock --random --cycle 5m"
 set -g lock-after-time 1800
 bind ^X lock-server
 ```
@@ -57,11 +66,12 @@ bind ^X lock-server
 ## Color Palette
 
 ```
-Purple  = lipgloss.Color("99")       // Headers, lock title
 Teal    = lipgloss.Color("#06ffa5")  // Accent, prompts, blinking cursor
 Gray    = lipgloss.Color("245")      // Dim/secondary text (hostname, hints)
 Red     = lipgloss.Color("196")      // Errors (auth failed)
 ```
+
+Screensavers use a 13-color retro phosphor CRT palette defined in `wormColors` (grid.go).
 
 ## Code Standards
 
@@ -73,5 +83,4 @@ Red     = lipgloss.Color("196")      // Errors (auth failed)
 
 ## Roadmap
 
-- Phase 2: xlock-style worm screensaver with fading trails + cycling figurine text
 - Phase 3: Configuration file support (`~/.config/tlock/config.yaml`)
