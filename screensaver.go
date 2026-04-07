@@ -3,7 +3,10 @@ package main
 import "math/rand"
 
 type screensaver interface {
-	run() bool // returns true if user authenticated
+	// run starts the screensaver animation loop.
+	// stopCh signals the screensaver to exit (for cycling).
+	// Returns true if the user authenticated, false otherwise.
+	run(stopCh <-chan struct{}) bool
 }
 
 var screensaverNames = []string{"snake", "pipes", "dvd"}

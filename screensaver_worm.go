@@ -24,11 +24,11 @@ type wormScreensaver struct {
 	numWorms int
 }
 
-func (ws *wormScreensaver) run() bool {
-	return runWormDemo(ws.numWorms)
+func (ws *wormScreensaver) run(stopCh <-chan struct{}) bool {
+	return runWormDemo(ws.numWorms, stopCh)
 }
 
-func runWormDemo(numWorms int) bool {
+func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -205,6 +205,8 @@ func runWormDemo(numWorms int) bool {
 
 	for {
 		select {
+		case <-stopCh:
+			return false
 		case key := <-keyCh:
 			// Ignore non-printable (tmux focus events)
 			if key < 32 && key != 13 && key != 10 {

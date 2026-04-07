@@ -48,11 +48,11 @@ func drawLockAt(col, row int, lines []string) {
 
 type dvdScreensaver struct{}
 
-func (d *dvdScreensaver) run() bool {
-	return runDVDDemo()
+func (d *dvdScreensaver) run(stopCh <-chan struct{}) bool {
+	return runDVDDemo(stopCh)
 }
 
-func runDVDDemo() bool {
+func runDVDDemo(stopCh <-chan struct{}) bool {
 	tw, th := getTermSize()
 	clearScreen()
 	hideCursor()
@@ -78,9 +78,6 @@ func runDVDDemo() bool {
 	vx := 1
 	vy := 1
 
-	// Draw static lock icon in top-left corner.
-	drawLockIcon()
-
 	// Initial draw of bouncing lock.
 	drawLockAt(col, row, lines)
 
@@ -104,7 +101,6 @@ func runDVDDemo() bool {
 
 	fullRedraw := func() {
 		clearScreen()
-		drawLockIcon()
 		// Clamp position to new bounds.
 		maxCol = tw - lockW + 1
 		maxRow = th - lockH + 1
@@ -125,6 +121,8 @@ func runDVDDemo() bool {
 
 	for {
 		select {
+		case <-stopCh:
+			return false
 		case key := <-keyCh:
 			// Ignore non-printable keys (tmux focus events), except Enter.
 			if key < 32 && key != 13 && key != 10 {
@@ -184,7 +182,5 @@ func runDVDDemo() bool {
 		// Draw at new position.
 		drawLockAt(col, row, lines)
 
-		// Redraw static lock icon (bouncing lock may have overlapped it).
-		drawLockIcon()
 	}
 }

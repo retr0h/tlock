@@ -14,39 +14,61 @@ import (
 )
 
 func main() {
-	screensaverName := flag.String(
-		"screensaver",
+	screensaverName := new(string)
+	delayStr := flag.String(
+		"delay",
 		"",
-		"Screensaver to run: snake, pipes, dvd, random",
+		"Duration idle before screensaver starts, e.g. 30s, 5m (default: immediate)",
 	)
-	screensaverDelay := flag.Int(
-		"screensaver-delay",
-		30,
-		"Seconds idle before screensaver starts (0 = immediate)",
-	)
-	_ = flag.Int(
-		"screensaver-cycle",
-		0,
-		"Minutes between screensaver rotation when using random (0 = disabled)",
+	cycleStr := flag.String(
+		"cycle",
+		"",
+		"Duration between screensaver rotation, e.g. 30s, 5m, 1h (with --random)",
 	)
 
-	// --snake is an alias for --screensaver snake --screensaver-delay 0
-	snake := flag.Bool(
-		"snake",
-		false,
-		"Shortcut for --screensaver snake --screensaver-delay 0",
-	)
+	// Shortcut flags — each launches its screensaver immediately
+	snake := flag.Bool("snake", false, "Launch snake screensaver immediately")
+	pipes := flag.Bool("pipes", false, "Launch pipes screensaver immediately")
+	dvd := flag.Bool("dvd", false, "Launch DVD lock screensaver immediately")
+	random := flag.Bool("random", false, "Launch a random screensaver immediately")
+
 	snakeCount := flag.Int("snake-count", 0, "Number of worms (0 = auto based on terminal size)")
 	wormCount := flag.Int("worm-count", 0, "Alias for --snake-count")
 
 	flag.Parse()
 
-	// Resolve aliases
-	if *snake {
+	// Resolve shortcut flags
+	switch {
+	case *snake:
 		*screensaverName = "snake"
-		*screensaverDelay = 0
+	case *pipes:
+		*screensaverName = "pipes"
+	case *dvd:
+		*screensaverName = "dvd"
+	case *random:
+		*screensaverName = "random"
 	}
 
+	// Parse durations
+	var delay time.Duration
+	if *delayStr != "" {
+		var err error
+		delay, err = time.ParseDuration(*delayStr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "invalid --delay: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	var cycleDur time.Duration
+	if *cycleStr != "" {
+		var err error
+		cycleDur, err = time.ParseDuration(*cycleStr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "invalid --cycle: %v\n", err)
+			os.Exit(1)
+		}
+	}
 	// --worm-count wins over --snake-count when both provided; otherwise take whichever is non-zero
 	numWorms := *snakeCount
 	if *wormCount > 0 {
@@ -68,14 +90,14 @@ func main() {
 	// Ignore signals that could bypass the lock
 	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGTSTP)
 
-	// Resolve "random" to a concrete name once per session
+	isRandom := *screensaverName == "random"
 	activeName := *screensaverName
-	if activeName == "random" {
+	if isRandom {
 		activeName = pickRandomScreensaver("")
 	}
 
-	buildScreensaver := func() screensaver {
-		factory, ok := screensaverFactory[activeName]
+	buildScreensaver := func(name string) screensaver {
+		factory, ok := screensaverFactory[name]
 		if !ok {
 			return nil
 		}
@@ -86,12 +108,56 @@ func main() {
 		return ss
 	}
 
+	// runWithCycle runs screensavers in a loop, rotating every cycleDur.
+	// Returns true if user authenticated.
+	runWithCycle := func() bool {
+		current := activeName
+		for {
+			stopCh := make(chan struct{})
+
+			// Start cycle timer
+			timer := time.NewTimer(cycleDur)
+			authCh := make(chan bool, 1)
+
+			go func() {
+				ss := buildScreensaver(current)
+				if ss != nil {
+					authCh <- ss.run(stopCh)
+				} else {
+					authCh <- false
+				}
+			}()
+
+			select {
+			case authenticated := <-authCh:
+				timer.Stop()
+				if authenticated {
+					return true
+				}
+				// Auth failed inside screensaver, pick next
+				current = pickRandomScreensaver(current)
+			case <-timer.C:
+				// Time to rotate
+				close(stopCh)
+				<-authCh // wait for screensaver to exit
+				current = pickRandomScreensaver(current)
+			}
+		}
+	}
+
+	neverStop := make(chan struct{}) // never closed — for non-cycling mode
+
 	for {
-		if activeName != "" && *screensaverDelay == 0 {
-			// Run screensaver immediately; it returns true on successful auth
-			ss := buildScreensaver()
-			if ss != nil && ss.run() {
-				return
+		if activeName != "" && delay == 0 {
+			if isRandom && cycleDur > 0 {
+				if runWithCycle() {
+					return
+				}
+			} else {
+				ss := buildScreensaver(activeName)
+				if ss != nil && ss.run(neverStop) {
+					return
+				}
 			}
 		} else if activeName != "" {
 			// Show password prompt; switch to screensaver after idle timeout
@@ -100,7 +166,7 @@ func main() {
 				pwCh <- readPasswordOverlay(false)
 			}()
 
-			timer := time.NewTimer(time.Duration(*screensaverDelay) * time.Second)
+			timer := time.NewTimer(delay)
 			select {
 			case pw := <-pwCh:
 				timer.Stop()
@@ -109,9 +175,15 @@ func main() {
 				}
 				continue
 			case <-timer.C:
-				ss := buildScreensaver()
-				if ss != nil && ss.run() {
-					return
+				if isRandom && cycleDur > 0 {
+					if runWithCycle() {
+						return
+					}
+				} else {
+					ss := buildScreensaver(activeName)
+					if ss != nil && ss.run(neverStop) {
+						return
+					}
 				}
 				continue
 			}

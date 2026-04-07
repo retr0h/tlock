@@ -19,11 +19,11 @@ type pipe struct {
 
 type pipesScreensaver struct{}
 
-func (p *pipesScreensaver) run() bool {
-	return runPipesDemo()
+func (p *pipesScreensaver) run(stopCh <-chan struct{}) bool {
+	return runPipesDemo(stopCh)
 }
 
-func runPipesDemo() bool {
+func runPipesDemo(stopCh <-chan struct{}) bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -204,6 +204,8 @@ func runPipesDemo() bool {
 
 	for {
 		select {
+		case <-stopCh:
+			return false
 		case key := <-keyCh:
 			if key < 32 && key != 13 && key != 10 {
 				startKeyReader()
@@ -268,22 +270,6 @@ func runPipesDemo() bool {
 		case <-ticker.C:
 		}
 
-		// Age trail cells
-		for gy := 0; gy < gridH; gy++ {
-			for gx := 0; gx < gridW; gx++ {
-				cell := &grid[gy][gx]
-				if cell.state == cellTrail {
-					cell.trailAge++
-					if cell.trailAge >= len(trailBlocks) {
-						cell.state = cellEmpty
-						eraseBlock(gx, gy)
-					} else {
-						drawBlock(gx, gy, trailBlocks[cell.trailAge], cell.color)
-					}
-				}
-			}
-		}
-
 		// Check ~75% fill — fade out and respawn
 		if nonLockCells > 0 && filledCount()*100/nonLockCells >= 75 {
 			fadeOutAll()
@@ -312,6 +298,9 @@ func runPipesDemo() bool {
 			if !p.alive {
 				// Respawn dead pipe
 				*p = spawnPipe()
+				// Draw spawn cell
+				grid[p.y][p.x] = gridCell{state: cellBody, color: p.color}
+				drawBlock(p.x, p.y, "\u2588", p.color)
 				continue
 			}
 
@@ -328,10 +317,9 @@ func runPipesDemo() bool {
 			nx := ((p.x + dx[p.dir]) + gridW) % gridW
 			ny := ((p.y + dy[p.dir]) + gridH) % gridH
 
-			// Check if next cell is available
+			// Check if next cell is available (empty only — pipes are solid)
 			canMove := func(gx, gy int) bool {
-				s := grid[gy][gx].state
-				return s == cellEmpty || s == cellTrail
+				return grid[gy][gx].state == cellEmpty
 			}
 
 			if !canMove(nx, ny) {
@@ -356,11 +344,7 @@ func runPipesDemo() bool {
 				}
 			}
 
-			// Mark current position as trail
-			grid[p.y][p.x] = gridCell{state: cellTrail, color: p.color, trailAge: 0}
-			drawBlock(p.x, p.y, trailBlocks[0], p.color)
-
-			// Advance pipe to next position
+			// Pipe cells stay solid — no trail conversion
 			p.x = nx
 			p.y = ny
 			grid[ny][nx] = gridCell{state: cellBody, color: p.color}
