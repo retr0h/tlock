@@ -16,7 +16,7 @@ Single-binary Go program using CGo for macOS system integration:
 - **`style.go`** - Lipgloss styles, color palette, message rendering
 - **`grid.go`** - Grid cell system (3x2 chars), block drawing, phosphor colors
 - **`screensaver.go`** - Screensaver interface, factory registry, random selection
-- **`screensaver_worm.go`** - Worm/snake screensaver (xlock-style)
+- **`screensaver_worm.go`** - Snake screensaver (xlock-style)
 - **`screensaver_dvd.go`** - Bouncing padlock screensaver
 - **`screensaver_pipes.go`** - Growing pipes screensaver
 - **CGo** - Touch ID via `LocalAuthentication.framework`, password via PAM (`pam_authenticate`)
@@ -48,14 +48,14 @@ go run . --snake       # Run directly (will lock terminal!)
 tlock
 
 # Screensavers (immediate)
-tlock --snake                  # Worms
+tlock --snake                  # Snake
 tlock --pipes                  # Growing pipes
 tlock --dvd                    # Bouncing padlock
 tlock --random                 # Random pick
 tlock --random --cycle 5m      # Rotate every 5 min
 
 # With idle delay
-tlock --snake --delay 30s      # Worms after 30s idle
+tlock --snake --delay 30s      # Snake after 30s idle
 
 # As tmux lock-command
 set -g lock-command "tlock --random --cycle 5m"
