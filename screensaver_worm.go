@@ -20,6 +20,14 @@ type worm struct {
 	minRun   int // minimum straight cells before turning
 }
 
+type wormScreensaver struct {
+	numWorms int
+}
+
+func (ws *wormScreensaver) run() bool {
+	return runWormDemo(ws.numWorms)
+}
+
 func runWormDemo(numWorms int) bool {
 	tw, th := getTermSize()
 	clearScreen()

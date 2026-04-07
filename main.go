@@ -14,19 +14,44 @@ import (
 )
 
 func main() {
-	snake := flag.Bool(
-		"snake",
-		false,
-		"Screensaver on immediately (shortcut for --screensaver --screensaver-delay 0)",
+	screensaverName := flag.String(
+		"screensaver",
+		"",
+		"Screensaver to run: snake, pipes, dvd, random",
 	)
-	snakeCount := flag.Int("snake-count", 0, "Number of worms (0 = auto based on terminal size)")
-	screensaver := flag.Bool("screensaver", false, "Enable xlock-style worm screensaver")
 	screensaverDelay := flag.Int(
 		"screensaver-delay",
 		30,
 		"Seconds idle before screensaver starts (0 = immediate)",
 	)
+	_ = flag.Int(
+		"screensaver-cycle",
+		0,
+		"Minutes between screensaver rotation when using random (0 = disabled)",
+	)
+
+	// --snake is an alias for --screensaver snake --screensaver-delay 0
+	snake := flag.Bool(
+		"snake",
+		false,
+		"Shortcut for --screensaver snake --screensaver-delay 0",
+	)
+	snakeCount := flag.Int("snake-count", 0, "Number of worms (0 = auto based on terminal size)")
+	wormCount := flag.Int("worm-count", 0, "Alias for --snake-count")
+
 	flag.Parse()
+
+	// Resolve aliases
+	if *snake {
+		*screensaverName = "snake"
+		*screensaverDelay = 0
+	}
+
+	// --worm-count wins over --snake-count when both provided; otherwise take whichever is non-zero
+	numWorms := *snakeCount
+	if *wormCount > 0 {
+		numWorms = *wormCount
+	}
 
 	fd := int(os.Stdin.Fd())
 	oldState, err := term.MakeRaw(fd)
@@ -43,21 +68,33 @@ func main() {
 	// Ignore signals that could bypass the lock
 	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGTSTP)
 
-	// --snake is a shortcut: screensaver on, delay 0
-	if *snake {
-		*screensaver = true
-		*screensaverDelay = 0
+	// Resolve "random" to a concrete name once per session
+	activeName := *screensaverName
+	if activeName == "random" {
+		activeName = pickRandomScreensaver("")
+	}
+
+	buildScreensaver := func() screensaver {
+		factory, ok := screensaverFactory[activeName]
+		if !ok {
+			return nil
+		}
+		ss := factory()
+		if ws, ok := ss.(*wormScreensaver); ok {
+			ws.numWorms = numWorms
+		}
+		return ss
 	}
 
 	for {
-		if *screensaver && *screensaverDelay == 0 {
-			// Screensaver immediately — worms run, keypress triggers auth
-			if runWormDemo(*snakeCount) {
+		if activeName != "" && *screensaverDelay == 0 {
+			// Run screensaver immediately; it returns true on successful auth
+			ss := buildScreensaver()
+			if ss != nil && ss.run() {
 				return
 			}
-		} else if *screensaver {
-			// Show password prompt, start screensaver after delay if idle
-			// Run password prompt with a timeout
+		} else if activeName != "" {
+			// Show password prompt; switch to screensaver after idle timeout
 			pwCh := make(chan string, 1)
 			go func() {
 				pwCh <- readPasswordOverlay(false)
@@ -72,14 +109,14 @@ func main() {
 				}
 				continue
 			case <-timer.C:
-				// Timeout — switch to screensaver
-				if runWormDemo(*snakeCount) {
+				ss := buildScreensaver()
+				if ss != nil && ss.run() {
 					return
 				}
 				continue
 			}
 		} else {
-			// No screensaver — just password prompt
+			// No screensaver — password prompt only
 			pw := readPasswordOverlay(false)
 			if handleAuth(pw) {
 				return
