@@ -162,17 +162,20 @@ func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 	ticker := time.NewTicker(120 * time.Millisecond)
 	defer ticker.Stop()
 
-	// Keypress channel
+	// Persistent key reader — survives stdin errors from tmux focus events
 	keyCh := make(chan byte, 4)
-	startKeyReader := func() {
-		go func() {
-			buf := make([]byte, 1)
-			if _, err := os.Stdin.Read(buf); err == nil {
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(buf)
+			if err != nil {
+				continue
+			}
+			if n > 0 {
 				keyCh <- buf[0]
 			}
-		}()
-	}
-	startKeyReader()
+		}
+	}()
 
 	// Handle resize and pane refocus
 	sigwinch := make(chan os.Signal, 1)
@@ -210,7 +213,6 @@ func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 		case key := <-keyCh:
 			// Ignore non-printable (tmux focus events)
 			if key < 32 && key != 13 && key != 10 {
-				startKeyReader()
 				continue
 			}
 			// Freeze worms — show password prompt
@@ -219,7 +221,6 @@ func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 				return true // authenticated — unlock
 			}
 			fullRedraw()
-			startKeyReader()
 			continue
 		case <-sigwinch:
 			tw, th = getTermSize()

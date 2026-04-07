@@ -122,15 +122,18 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 	defer ticker.Stop()
 
 	keyCh := make(chan byte, 4)
-	startKeyReader := func() {
-		go func() {
-			buf := make([]byte, 1)
-			if _, err := os.Stdin.Read(buf); err == nil {
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(buf)
+			if err != nil {
+				continue
+			}
+			if n > 0 {
 				keyCh <- buf[0]
 			}
-		}()
-	}
-	startKeyReader()
+		}
+	}()
 
 	sigwinch := make(chan os.Signal, 1)
 	signal.Notify(sigwinch, syscall.SIGWINCH, syscall.SIGCONT)
@@ -215,7 +218,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 			return false
 		case key := <-keyCh:
 			if key < 32 && key != 13 && key != 10 {
-				startKeyReader()
 				continue
 			}
 			pw := readPasswordOverlay(true)
@@ -223,7 +225,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 				return true
 			}
 			fullRedraw()
-			startKeyReader()
 			continue
 
 		case <-sigwinch:
