@@ -27,6 +27,3 @@ type pipesScreensaver struct{}
 
 func (p *pipesScreensaver) run() bool { return false }
 
-type dvdScreensaver struct{}
-
-func (d *dvdScreensaver) run() bool { return false }
