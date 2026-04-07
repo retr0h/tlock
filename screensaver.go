@@ -23,7 +23,4 @@ func pickRandomScreensaver(exclude string) string {
 	}
 }
 
-type pipesScreensaver struct{}
-
-func (p *pipesScreensaver) run() bool { return false }
 
