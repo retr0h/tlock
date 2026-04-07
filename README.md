@@ -27,14 +27,24 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 
 <table align="center">
   <tr>
-    <td align="center" width="33%"><a href="asset/screensaver.png"><img src="asset/screensaver.png" width="100%" alt="Worm Screensaver"></a></td>
-    <td align="center" width="33%"><a href="asset/passphrase.png"><img src="asset/passphrase.png" width="100%" alt="Passphrase Prompt"></a></td>
-    <td align="center" width="33%"><a href="asset/touchid.png"><img src="asset/touchid.png" width="100%" alt="Touch ID Prompt"></a></td>
+    <td align="center" width="33%"><a href="asset/worms.png"><img src="asset/worms.png" width="100%" alt="Worms Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/dvd.png"><img src="asset/dvd.png" width="100%" alt="DVD Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/pipes.png"><img src="asset/pipes.png" width="100%" alt="Pipes Screensaver"></a></td>
   </tr>
   <tr>
-    <td align="center"><sub>Screensaver</sub></td>
+    <td align="center"><sub>Worms</sub></td>
+    <td align="center"><sub>DVD</sub></td>
+    <td align="center"><sub>Pipes</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="asset/passphrase.png"><img src="asset/passphrase.png" width="100%" alt="Passphrase Prompt"></a></td>
+    <td align="center"><a href="asset/touchid.png"><img src="asset/touchid.png" width="100%" alt="Touch ID Prompt"></a></td>
+    <td></td>
+  </tr>
+  <tr>
     <td align="center"><sub>Passphrase</sub></td>
     <td align="center"><sub>Touch ID</sub></td>
+    <td></td>
   </tr>
 </table>
 
@@ -86,17 +96,20 @@ sudo mv tlock /usr/local/bin/
 Run directly:
 
 ```bash
-tlock                                        # Password prompt only
-tlock --snake                                # Worms immediately
-tlock --screensaver                          # Worms after 30s idle (default delay)
-tlock --screensaver --screensaver-delay 60   # Worms after 1 min idle
+tlock                          # Password prompt only
+tlock --worms                  # Worms screensaver
+tlock --pipes                  # Pipes screensaver
+tlock --dvd                    # Bouncing lock screensaver
+tlock --random                 # Random screensaver
+tlock --random --cycle 5m      # Rotate screensaver every 5 min
+tlock --worms --delay 30s      # Worms after 30s idle
 ```
 
 As a tmux lock command:
 
 ```tmux
 # ~/.tmux.conf
-set -g lock-command "tlock --snake"
+set -g lock-command "tlock --random --cycle 5m"
 set -g lock-after-time 1800    # Lock after 30 min idle
 bind ^X lock-server            # Ctrl+X to lock now
 ```
@@ -105,13 +118,14 @@ bind ^X lock-server            # Ctrl+X to lock now
 
 tlock brings the classic [xlock](https://linux.die.net/man/1/xlock) experience to your terminal — an animated screensaver that kicks in when your terminal is locked, with authentication required to dismiss it.
 
-1. 🐍 **Screensaver mode** (`--snake`): xlock-style worms animate across the screen
+1. 🎨 **Pick a screensaver** — `--worms`, `--pipes`, `--dvd` (bouncing lock), or `--random`
 2. ⌨️ **Any keypress** pauses the screensaver and shows the passphrase prompt
 3. 🔑 **Type your macOS password** and press Enter to unlock
 4. 🖐️ **Press Esc** to switch to Touch ID — authenticate with your fingerprint
 5. 🚫 Wrong password? **ACCESS DENIED** — back to the screensaver
+6. 🔄 **Cycle mode** — `--random --cycle 5m` rotates screensavers automatically
 
-Without `--snake` or `--screensaver`, tlock shows the passphrase prompt directly.
+Without a screensaver flag, tlock shows the passphrase prompt directly.
 
 All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authentication. 🔐
 
@@ -136,9 +150,10 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 
 ## 🗺️ Roadmap
 
-- [x] 🐛 xlock-style worm screensaver with fading trails
-- [ ] 🔤 Additional screensaver modes (cycling figurine text, matrix rain, etc.)
-- [ ] ⚙️ Configuration file (`~/.config/tlock/config.yaml`)
+- [x] 🪱 xlock-style worm screensaver with fading trails
+- [x] 🔒 Bouncing DVD padlock screensaver
+- [x] 🔲 Pipes screensaver with fade-out reset
+- [x] 🎲 Random screensaver selection with `--cycle` rotation
 - [ ] 🔐 1Password CLI integration
 
 ## 📄 License
