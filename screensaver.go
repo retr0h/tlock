@@ -25,5 +25,3 @@ func pickRandomScreensaver(exclude string) string {
 		}
 	}
 }
-
-

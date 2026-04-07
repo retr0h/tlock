@@ -96,17 +96,20 @@ sudo mv tlock /usr/local/bin/
 Run directly:
 
 ```bash
-tlock                                        # Password prompt only
-tlock --snake                                # Worms immediately
-tlock --screensaver                          # Worms after 30s idle (default delay)
-tlock --screensaver --screensaver-delay 60   # Worms after 1 min idle
+tlock                          # Password prompt only
+tlock --snake                  # Worms screensaver
+tlock --pipes                  # Pipes screensaver
+tlock --dvd                    # Bouncing lock screensaver
+tlock --random                 # Random screensaver
+tlock --random --cycle 5m      # Rotate screensaver every 5 min
+tlock --snake --delay 30s      # Worms after 30s idle
 ```
 
 As a tmux lock command:
 
 ```tmux
 # ~/.tmux.conf
-set -g lock-command "tlock --snake"
+set -g lock-command "tlock --random --cycle 5m"
 set -g lock-after-time 1800    # Lock after 30 min idle
 bind ^X lock-server            # Ctrl+X to lock now
 ```

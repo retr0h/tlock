@@ -82,7 +82,3 @@ func clearRect(boxWidth, boxHeight, padding int) {
 		fmt.Printf("\033[%d;%dH%s", row, startCol+1, blank)
 	}
 }
-
-func renderLockScreen() {
-	clearScreen()
-}

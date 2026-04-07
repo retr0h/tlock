@@ -8,15 +8,12 @@ import (
 )
 
 var (
-	purple = lipgloss.Color("99")
-	teal   = lipgloss.Color("#06ffa5")
-	gray   = lipgloss.Color("245")
-	red    = lipgloss.Color("196")
+	teal = lipgloss.Color("#06ffa5")
+	gray = lipgloss.Color("245")
+	red  = lipgloss.Color("196")
 
-	lockTitleStyle = lipgloss.NewStyle().Bold(true).Foreground(purple)
-	subtitleStyle  = lipgloss.NewStyle().Foreground(gray)
-	promptStyle    = lipgloss.NewStyle().Foreground(teal)
-	errorStyle     = lipgloss.NewStyle().Bold(true).Foreground(red)
+	subtitleStyle = lipgloss.NewStyle().Foreground(gray)
+	errorStyle    = lipgloss.NewStyle().Bold(true).Foreground(red)
 )
 
 var glitchBorder = lipgloss.Border{
@@ -58,33 +55,6 @@ func renderMessage(msg string, style lipgloss.Style) {
 	}
 
 	lines := strings.Split(box, "\n")
-	startRow := (h - len(lines)) / 2
-	fmt.Printf("\033[%d;0H", startRow)
-	fmt.Printf("%s\r\n", centerBlock(box, w))
-}
-
-// renderMessageOverlay renders a boxed message over existing content without clearing the screen
-func renderMessageOverlay(msg string, style lipgloss.Style) {
-	w, h := getTermSize()
-
-	var box string
-	if style.GetForeground() == red {
-		box = errBoxStyle.Render(msg)
-	} else {
-		box = msgBoxStyle.Render(msg)
-	}
-
-	lines := strings.Split(box, "\n")
-	boxWidth := 0
-	for _, line := range lines {
-		lw := lipgloss.Width(line)
-		if lw > boxWidth {
-			boxWidth = lw
-		}
-	}
-
-	clearRect(boxWidth, len(lines), 3)
-
 	startRow := (h - len(lines)) / 2
 	fmt.Printf("\033[%d;0H", startRow)
 	fmt.Printf("%s\r\n", centerBlock(box, w))

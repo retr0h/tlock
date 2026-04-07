@@ -62,7 +62,10 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 	shuffledColors := func() []lipgloss.Color {
 		shuffled := make([]lipgloss.Color, len(wormColors))
 		copy(shuffled, wormColors)
-		rand.Shuffle(len(shuffled), func(a, b int) { shuffled[a], shuffled[b] = shuffled[b], shuffled[a] })
+		rand.Shuffle(
+			len(shuffled),
+			func(a, b int) { shuffled[a], shuffled[b] = shuffled[b], shuffled[a] },
+		)
 		return shuffled
 	}
 
