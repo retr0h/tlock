@@ -85,18 +85,22 @@ func runDVDDemo(stopCh <-chan struct{}) bool {
 	defer ticker.Stop()
 
 	keyCh := make(chan byte, 4)
-	go func() {
-		buf := make([]byte, 1)
-		for {
-			n, err := os.Stdin.Read(buf)
-			if err != nil {
-				continue
+	startKeyReader := func() {
+		go func() {
+			buf := make([]byte, 1)
+			for {
+				n, err := os.Stdin.Read(buf)
+				if err != nil {
+					continue // retry on error instead of dying
+				}
+				if n > 0 {
+					keyCh <- buf[0]
+					return // exit so we don't compete with auth overlay
+				}
 			}
-			if n > 0 {
-				keyCh <- buf[0]
-			}
-		}
-	}()
+		}()
+	}
+	startKeyReader()
 
 	sigwinch := make(chan os.Signal, 1)
 	signal.Notify(sigwinch, syscall.SIGWINCH, syscall.SIGCONT)
@@ -129,6 +133,7 @@ func runDVDDemo(stopCh <-chan struct{}) bool {
 		case key := <-keyCh:
 			// Ignore non-printable keys (tmux focus events), except Enter.
 			if key < 32 && key != 13 && key != 10 {
+				startKeyReader()
 				continue
 			}
 			pw := readPasswordOverlay(true)
@@ -137,6 +142,7 @@ func runDVDDemo(stopCh <-chan struct{}) bool {
 				return true
 			}
 			fullRedraw()
+			startKeyReader()
 			continue
 
 		case <-sigwinch:
