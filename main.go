@@ -27,20 +27,21 @@ func main() {
 	)
 
 	// Shortcut flags — each launches its screensaver immediately
-	snake := flag.Bool("snake", false, "Launch snake screensaver immediately")
+	worms := flag.Bool("worms", false, "Launch worms screensaver immediately")
+	snake := flag.Bool("snake", false, "Alias for --worms")
 	pipes := flag.Bool("pipes", false, "Launch pipes screensaver immediately")
 	dvd := flag.Bool("dvd", false, "Launch DVD lock screensaver immediately")
 	random := flag.Bool("random", false, "Launch a random screensaver immediately")
 
-	snakeCount := flag.Int("snake-count", 0, "Number of worms (0 = auto based on terminal size)")
-	wormCount := flag.Int("worm-count", 0, "Alias for --snake-count")
+	wormCount := flag.Int("worm-count", 0, "Number of worms (0 = auto based on terminal size)")
+	snakeCount := flag.Int("snake-count", 0, "Alias for --worm-count")
 
 	flag.Parse()
 
 	// Resolve shortcut flags
 	switch {
-	case *snake:
-		*screensaverName = "snake"
+	case *worms || *snake:
+		*screensaverName = "worms"
 	case *pipes:
 		*screensaverName = "pipes"
 	case *dvd:
@@ -69,10 +70,10 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	// --worm-count wins over --snake-count when both provided; otherwise take whichever is non-zero
-	numWorms := *snakeCount
-	if *wormCount > 0 {
-		numWorms = *wormCount
+	// --worm-count wins over --snake-count when both provided
+	numWorms := *wormCount
+	if *snakeCount > 0 && numWorms == 0 {
+		numWorms = *snakeCount
 	}
 
 	fd := int(os.Stdin.Fd())

@@ -27,12 +27,12 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 
 <table align="center">
   <tr>
-    <td align="center" width="33%"><a href="asset/snake.png"><img src="asset/snake.png" width="100%" alt="Snake Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/worms.png"><img src="asset/worms.png" width="100%" alt="Worms Screensaver"></a></td>
     <td align="center" width="33%"><a href="asset/dvd.png"><img src="asset/dvd.png" width="100%" alt="DVD Screensaver"></a></td>
     <td align="center" width="33%"><a href="asset/pipes.png"><img src="asset/pipes.png" width="100%" alt="Pipes Screensaver"></a></td>
   </tr>
   <tr>
-    <td align="center"><sub>Snake</sub></td>
+    <td align="center"><sub>Worms</sub></td>
     <td align="center"><sub>DVD</sub></td>
     <td align="center"><sub>Pipes</sub></td>
   </tr>
@@ -97,12 +97,12 @@ Run directly:
 
 ```bash
 tlock                          # Password prompt only
-tlock --snake                  # Snake screensaver
+tlock --worms                  # Worms screensaver
 tlock --pipes                  # Pipes screensaver
 tlock --dvd                    # Bouncing lock screensaver
 tlock --random                 # Random screensaver
 tlock --random --cycle 5m      # Rotate screensaver every 5 min
-tlock --snake --delay 30s      # Snake after 30s idle
+tlock --worms --delay 30s      # Worms after 30s idle
 ```
 
 As a tmux lock command:
@@ -118,7 +118,7 @@ bind ^X lock-server            # Ctrl+X to lock now
 
 tlock brings the classic [xlock](https://linux.die.net/man/1/xlock) experience to your terminal — an animated screensaver that kicks in when your terminal is locked, with authentication required to dismiss it.
 
-1. 🎨 **Pick a screensaver** — `--snake`, `--pipes`, `--dvd` (bouncing lock), or `--random`
+1. 🎨 **Pick a screensaver** — `--worms`, `--pipes`, `--dvd` (bouncing lock), or `--random`
 2. ⌨️ **Any keypress** pauses the screensaver and shows the passphrase prompt
 3. 🔑 **Type your macOS password** and press Enter to unlock
 4. 🖐️ **Press Esc** to switch to Touch ID — authenticate with your fingerprint
@@ -137,7 +137,7 @@ All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authenti
 
 ## 💡 Inspiration
 
-tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11 screen locker from the 90s that shipped with most Unix workstations. The snake screensaver mode (`xlock -mode worm`) by David Bagley was a staple of SGI Indigos and Sun workstations in dimly lit server rooms everywhere.
+tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11 screen locker from the 90s that shipped with most Unix workstations. The worm screensaver mode (`xlock -mode worm`) by David Bagley was a staple of SGI Indigos and Sun workstations in dimly lit server rooms everywhere.
 
 ## 🔀 Alternatives
 
@@ -150,7 +150,7 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 
 ## 🗺️ Roadmap
 
-- [x] 🐍 xlock-style snake screensaver with fading trails
+- [x] 🪱 xlock-style worm screensaver with fading trails
 - [x] 🔒 Bouncing DVD padlock screensaver
 - [x] 🔲 Pipes screensaver with fade-out reset
 - [x] 🎲 Random screensaver selection with `--cycle` rotation

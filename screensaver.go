@@ -9,10 +9,10 @@ type screensaver interface {
 	run(stopCh <-chan struct{}) bool
 }
 
-var screensaverNames = []string{"snake", "pipes", "dvd"}
+var screensaverNames = []string{"worms", "pipes", "dvd"}
 
 var screensaverFactory = map[string]func() screensaver{
-	"snake": func() screensaver { return &wormScreensaver{} },
+	"worms": func() screensaver { return &wormScreensaver{} },
 	"pipes": func() screensaver { return &pipesScreensaver{} },
 	"dvd":   func() screensaver { return &dvdScreensaver{} },
 }
