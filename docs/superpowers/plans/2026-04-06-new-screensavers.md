@@ -1,10 +1,16 @@
 # New Screensavers Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add two new screensavers (bouncing DVD logo, pipes) and unify CLI flags under `--screensaver <name>`.
+**Goal:** Add two new screensavers (bouncing DVD logo, pipes) and unify CLI
+flags under `--screensaver <name>`.
 
-**Architecture:** Extract shared code (terminal utils, grid, auth, styles) from the monolithic `main.go` into separate files. Each screensaver becomes its own file implementing a common `screensaver` interface. Main dispatches by name.
+**Architecture:** Extract shared code (terminal utils, grid, auth, styles) from
+the monolithic `main.go` into separate files. Each screensaver becomes its own
+file implementing a common `screensaver` interface. Main dispatches by name.
 
 **Tech Stack:** Go, CGo, lipgloss, golang.org/x/term
 
@@ -12,23 +18,24 @@
 
 ### File Structure
 
-| File | Responsibility |
-|------|---------------|
-| `main.go` | Entry point, flag parsing, terminal setup, screensaver dispatch (trimmed from 877 → ~120 lines) |
-| `terminal.go` | clearScreen, hideCursor, showCursor, centerText, centerBlock, getTermSize, drawLockIcon, clearRect |
-| `auth.go` | handleAuth, readPasswordOverlay, CGo block (Touch ID + PAM) |
-| `style.go` | Color vars, lipgloss styles, glitchBorder, msgBoxStyle, errBoxStyle, renderMessage, renderMessageOverlay |
-| `grid.go` | cellW/cellH constants, point, gridCell, cellEmpty/cellBody/cellTrail/cellLock, drawBlock, eraseBlock, trailBlocks, wormColors, dx/dy |
-| `screensaver.go` | `screensaver` interface definition, screensaver registry, random/cycle dispatch logic |
-| `screensaver_worm.go` | worm struct, runWormDemo → implements screensaver interface |
-| `screensaver_dvd.go` | Bouncing DVD logo screensaver |
-| `screensaver_pipes.go` | Pipes screensaver |
+| File                   | Responsibility                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `main.go`              | Entry point, flag parsing, terminal setup, screensaver dispatch (trimmed from 877 → ~120 lines)                                      |
+| `terminal.go`          | clearScreen, hideCursor, showCursor, centerText, centerBlock, getTermSize, drawLockIcon, clearRect                                   |
+| `auth.go`              | handleAuth, readPasswordOverlay, CGo block (Touch ID + PAM)                                                                          |
+| `style.go`             | Color vars, lipgloss styles, glitchBorder, msgBoxStyle, errBoxStyle, renderMessage, renderMessageOverlay                             |
+| `grid.go`              | cellW/cellH constants, point, gridCell, cellEmpty/cellBody/cellTrail/cellLock, drawBlock, eraseBlock, trailBlocks, wormColors, dx/dy |
+| `screensaver.go`       | `screensaver` interface definition, screensaver registry, random/cycle dispatch logic                                                |
+| `screensaver_worm.go`  | worm struct, runWormDemo → implements screensaver interface                                                                          |
+| `screensaver_dvd.go`   | Bouncing DVD logo screensaver                                                                                                        |
+| `screensaver_pipes.go` | Pipes screensaver                                                                                                                    |
 
 ---
 
 ### Task 1: Extract shared code from main.go
 
 **Files:**
+
 - Create: `terminal.go`, `auth.go`, `style.go`, `grid.go`
 - Modify: `main.go`
 
@@ -220,7 +227,9 @@ func renderMessageOverlay(msg string, style lipgloss.Style) {
 
 - [ ] **Step 3: Create `auth.go`**
 
-Move the CGo block (lines 5-83), the `import "C"` line, and the `handleAuth` + `readPasswordOverlay` functions. The CGo comment block MUST be directly above `import "C"` with no blank line.
+Move the CGo block (lines 5-83), the `import "C"` line, and the `handleAuth` +
+`readPasswordOverlay` functions. The CGo comment block MUST be directly above
+`import "C"` with no blank line.
 
 ```go
 package main
@@ -547,7 +556,8 @@ func eraseBlock(gx, gy int) {
 
 - [ ] **Step 5: Trim `main.go`**
 
-Replace `main.go` entirely with just the entry point. Remove all extracted code. Keep only `package main`, imports, `renderLockScreen`, and `main()`.
+Replace `main.go` entirely with just the entry point. Remove all extracted code.
+Keep only `package main`, imports, `renderLockScreen`, and `main()`.
 
 ```go
 // Package main implements tlock, a terminal lock screen for macOS with
@@ -642,8 +652,8 @@ func main() {
 
 - [ ] **Step 6: Build and verify**
 
-Run: `cd /Users/john/git/tlock && go build -o tlock .`
-Expected: Compiles with no errors. Identical behavior to before.
+Run: `cd /Users/john/git/tlock && go build -o tlock .` Expected: Compiles with
+no errors. Identical behavior to before.
 
 - [ ] **Step 7: Commit**
 
@@ -657,12 +667,17 @@ git commit -m "refactor: extract shared code from main.go into focused files"
 ### Task 2: Extract worm screensaver into its own file
 
 **Files:**
+
 - Create: `screensaver_worm.go`
 - Modify: `main.go` (remove `runWormDemo`)
 
 - [ ] **Step 1: Create `screensaver_worm.go`**
 
-Move the `worm` struct and `runWormDemo` function from `main.go` (they should still be there from the trimmed version — actually they were left in the Step 5 main.go above by mistake, but in reality the worm code is still in `main.go` after step 5 since we only showed the entry point code; in practice, move ALL remaining worm code to this file):
+Move the `worm` struct and `runWormDemo` function from `main.go` (they should
+still be there from the trimmed version — actually they were left in the Step 5
+main.go above by mistake, but in reality the worm code is still in `main.go`
+after step 5 since we only showed the entry point code; in practice, move ALL
+remaining worm code to this file):
 
 ```go
 package main
@@ -690,16 +705,18 @@ func runWormDemo(numWorms int) bool {
 }
 ```
 
-Copy the `runWormDemo` function body exactly as-is from the current `main.go` (lines 458-771). Add `"github.com/charmbracelet/lipgloss"` to the import if needed for `lipgloss.Color`.
+Copy the `runWormDemo` function body exactly as-is from the current `main.go`
+(lines 458-771). Add `"github.com/charmbracelet/lipgloss"` to the import if
+needed for `lipgloss.Color`.
 
 - [ ] **Step 2: Remove worm code from `main.go`**
 
-Delete the `worm` struct and `runWormDemo` function from `main.go`, leaving only the entry point.
+Delete the `worm` struct and `runWormDemo` function from `main.go`, leaving only
+the entry point.
 
 - [ ] **Step 3: Build and verify**
 
-Run: `cd /Users/john/git/tlock && go build -o tlock .`
-Expected: Compiles clean.
+Run: `cd /Users/john/git/tlock && go build -o tlock .` Expected: Compiles clean.
 
 - [ ] **Step 4: Commit**
 
@@ -713,6 +730,7 @@ git commit -m "refactor: extract worm screensaver to screensaver_worm.go"
 ### Task 3: Add screensaver interface and unified CLI flags
 
 **Files:**
+
 - Create: `screensaver.go`
 - Modify: `main.go`
 
@@ -947,8 +965,8 @@ func main() {
 
 - [ ] **Step 5: Build and verify**
 
-Run: `cd /Users/john/git/tlock && go build -o tlock .`
-Expected: Compiles. `tlock --screensaver snake` works same as `tlock --snake`.
+Run: `cd /Users/john/git/tlock && go build -o tlock .` Expected: Compiles.
+`tlock --screensaver snake` works same as `tlock --snake`.
 
 - [ ] **Step 6: Commit**
 
@@ -962,7 +980,9 @@ git commit -m "feat: add screensaver interface and unified --screensaver flag"
 ### Task 4: Implement bouncing DVD logo screensaver
 
 **Files:**
-- Modify: `screensaver_dvd.go` (replace stub in `screensaver.go` — actually, create this as its own file and remove stub)
+
+- Modify: `screensaver_dvd.go` (replace stub in `screensaver.go` — actually,
+  create this as its own file and remove stub)
 - Modify: `screensaver.go` (remove dvd stub)
 
 - [ ] **Step 1: Create `screensaver_dvd.go`**
@@ -1120,13 +1140,13 @@ Delete the `dvdScreensaver` struct and method stub from `screensaver.go`.
 
 - [ ] **Step 3: Build and verify**
 
-Run: `cd /Users/john/git/tlock && go build -o tlock .`
-Expected: Compiles. `tlock --screensaver dvd` shows bouncing logo.
+Run: `cd /Users/john/git/tlock && go build -o tlock .` Expected: Compiles.
+`tlock --screensaver dvd` shows bouncing logo.
 
 - [ ] **Step 4: Manual test**
 
-Run: `./tlock --screensaver dvd`
-Verify:
+Run: `./tlock --screensaver dvd` Verify:
+
 - Logo bounces off all 4 walls
 - Color changes on each bounce
 - Keypress shows auth overlay
@@ -1145,6 +1165,7 @@ git commit -m "feat: add bouncing DVD logo screensaver"
 ### Task 5: Implement pipes screensaver
 
 **Files:**
+
 - Create: `screensaver_pipes.go` (replace stub)
 - Modify: `screensaver.go` (remove pipes stub)
 
@@ -1437,23 +1458,27 @@ Delete the `pipesScreensaver` struct and method stub from `screensaver.go`.
 
 - [ ] **Step 3: Build and verify**
 
-Run: `cd /Users/john/git/tlock && go build -o tlock .`
-Expected: Compiles.
+Run: `cd /Users/john/git/tlock && go build -o tlock .` Expected: Compiles.
 
 - [ ] **Step 4: Manual test both reset modes**
 
 Test hard reset:
+
 ```go
 // Temporarily in screensaver.go factory:
 "pipes": func() screensaver { return &pipesScreensaver{fadeOut: false} },
 ```
+
 Run: `./tlock --screensaver pipes` — verify pipes fill screen then hard reset.
 
 Test fade out:
+
 ```go
 "pipes": func() screensaver { return &pipesScreensaver{fadeOut: true} },
 ```
-Run: `./tlock --screensaver pipes` — verify pipes fade through ░▒▓ stages then restart.
+
+Run: `./tlock --screensaver pipes` — verify pipes fade through ░▒▓ stages then
+restart.
 
 User picks which one to keep after seeing both.
 
@@ -1469,6 +1494,7 @@ git commit -m "feat: add pipes screensaver"
 ### Task 6: Add ghost trail variant to DVD (for comparison)
 
 **Files:**
+
 - Modify: `screensaver_dvd.go`
 
 - [ ] **Step 1: Add trail option to dvdScreensaver**
@@ -1481,7 +1507,9 @@ type dvdScreensaver struct {
 }
 ```
 
-In the `run()` method, after `eraseDVD(x, y)` and before drawing at the new position, if `ghostTrail` is true, draw a faded copy at the old position instead of erasing:
+In the `run()` method, after `eraseDVD(x, y)` and before drawing at the new
+position, if `ghostTrail` is true, draw a faded copy at the old position instead
+of erasing:
 
 ```go
 		// Erase or leave ghost trail at old position
@@ -1526,7 +1554,9 @@ Run: `cd /Users/john/git/tlock && go build -o tlock .`
 
 - [ ] **Step 3: Manual test**
 
-Temporarily set `ghostTrail: true` in the factory, run `./tlock --screensaver dvd`, compare with `ghostTrail: false`. User picks which to keep.
+Temporarily set `ghostTrail: true` in the factory, run
+`./tlock --screensaver dvd`, compare with `ghostTrail: false`. User picks which
+to keep.
 
 - [ ] **Step 4: Commit**
 
@@ -1539,20 +1569,24 @@ git commit -m "feat: add ghost trail option to DVD screensaver for comparison"
 
 ### Task 7: Wire up --screensaver-cycle and random
 
-This is already implemented in Task 3's `main.go` rewrite. This task is for testing and refinement.
+This is already implemented in Task 3's `main.go` rewrite. This task is for
+testing and refinement.
 
 **Files:**
+
 - Modify: `main.go` (if needed)
 
 - [ ] **Step 1: Test random selection**
 
-Run: `./tlock --screensaver random`
-Verify: Picks one of snake/pipes/dvd at random each launch.
+Run: `./tlock --screensaver random` Verify: Picks one of snake/pipes/dvd at
+random each launch.
 
 - [ ] **Step 2: Test cycle mode**
 
-Run: `./tlock --screensaver random --screensaver-cycle 1`
-Verify: Switches screensaver every 1 minute. Note: cycling requires a stop mechanism — the current screensaver needs to be interruptible. If this doesn't work cleanly, add a `stopCh chan struct{}` to the screensaver interface or use a context.
+Run: `./tlock --screensaver random --screensaver-cycle 1` Verify: Switches
+screensaver every 1 minute. Note: cycling requires a stop mechanism — the
+current screensaver needs to be interruptible. If this doesn't work cleanly, add
+a `stopCh chan struct{}` to the screensaver interface or use a context.
 
 If cycling needs a stop channel, update the interface:
 
@@ -1583,6 +1617,7 @@ git commit -m "feat: wire up screensaver cycling with stop channel"
 - [ ] **Step 1: Demo all screensavers for user**
 
 Run each and let user compare:
+
 ```bash
 ./tlock --screensaver snake
 ./tlock --screensaver dvd
@@ -1592,11 +1627,13 @@ Run each and let user compare:
 
 - [ ] **Step 2: User picks DVD trail mode**
 
-Show both `ghostTrail: true` and `ghostTrail: false`. Remove the unchosen variant and the bool field.
+Show both `ghostTrail: true` and `ghostTrail: false`. Remove the unchosen
+variant and the bool field.
 
 - [ ] **Step 3: User picks pipes reset mode**
 
-Show both `fadeOut: true` and `fadeOut: false`. Remove the unchosen variant and the bool field.
+Show both `fadeOut: true` and `fadeOut: false`. Remove the unchosen variant and
+the bool field.
 
 - [ ] **Step 4: Final cleanup commit**
 
@@ -1607,8 +1644,7 @@ git commit -m "feat: finalize screensaver options based on user review"
 
 - [ ] **Step 5: Lint**
 
-Run: `golangci-lint run`
-Fix any issues.
+Run: `golangci-lint run` Fix any issues.
 
 - [ ] **Step 6: Final commit if lint fixes needed**
 
