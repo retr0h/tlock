@@ -83,4 +83,4 @@ Screensavers use a 13-color retro phosphor CRT palette defined in `wormColors` (
 
 ## Roadmap
 
-- Phase 3: Configuration file support (`~/.config/tlock/config.yaml`)
+- 1Password CLI integration

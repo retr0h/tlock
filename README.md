@@ -154,7 +154,6 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 - [x] 🔒 Bouncing DVD padlock screensaver
 - [x] 🔲 Pipes screensaver with fade-out reset
 - [x] 🎲 Random screensaver selection with `--cycle` rotation
-- [ ] ⚙️ Configuration file (`~/.config/tlock/config.yaml`)
 - [ ] 🔐 1Password CLI integration
 
 ## 📄 License
