@@ -121,7 +121,7 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 	ticker := time.NewTicker(80 * time.Millisecond)
 	defer ticker.Stop()
 
-	keyCh := make(chan byte, 1)
+	keyCh := make(chan byte, 4)
 	startKeyReader := func() {
 		go func() {
 			buf := make([]byte, 1)
@@ -168,9 +168,12 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		return count
 	}
 
-	// Fade out all body/trail cells through trailBlocks stages, then clear
-	fadeOutAll := func() {
-		// Convert all body cells to trail at age 0
+	// Fading state — when true, pipes stop growing and cells fade out
+	fading := false
+
+	// Start fading: convert all body cells to trail
+	startFade := func() {
+		fading = true
 		for gy := 0; gy < gridH; gy++ {
 			for gx := 0; gx < gridW; gx++ {
 				cell := &grid[gy][gx]
@@ -180,26 +183,27 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 				}
 			}
 		}
-		// Step through trail ages until all empty
-		for age := 0; age < len(trailBlocks); age++ {
-			for gy := 0; gy < gridH; gy++ {
-				for gx := 0; gx < gridW; gx++ {
-					cell := &grid[gy][gx]
-					if cell.state == cellTrail {
-						if cell.trailAge < len(trailBlocks) {
-							drawBlock(gx, gy, trailBlocks[cell.trailAge], cell.color)
-						}
-						cell.trailAge++
-						if cell.trailAge >= len(trailBlocks) {
-							cell.state = cellEmpty
-							eraseBlock(gx, gy)
-						}
+	}
+
+	// Step one fade tick — returns true when all cells are empty
+	fadeStep := func() bool {
+		allGone := true
+		for gy := 0; gy < gridH; gy++ {
+			for gx := 0; gx < gridW; gx++ {
+				cell := &grid[gy][gx]
+				if cell.state == cellTrail {
+					cell.trailAge++
+					if cell.trailAge >= len(trailBlocks) {
+						cell.state = cellEmpty
+						eraseBlock(gx, gy)
+					} else {
+						drawBlock(gx, gy, trailBlocks[cell.trailAge], cell.color)
+						allGone = false
 					}
 				}
 			}
-			drawLockIcon()
-			time.Sleep(120 * time.Millisecond)
 		}
+		return allGone
 	}
 
 	// Initial draw of the lock icon
@@ -273,25 +277,33 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		case <-ticker.C:
 		}
 
-		// Check ~75% fill — fade out and respawn
-		if nonLockCells > 0 && filledCount()*100/nonLockCells >= 75 {
-			fadeOutAll()
-			// Reset grid (preserve lock area)
-			for gy := 0; gy < gridH; gy++ {
-				for gx := 0; gx < gridW; gx++ {
-					if grid[gy][gx].state != cellLock {
-						grid[gy][gx] = gridCell{}
+		// If fading, step the fade and check if done
+		if fading {
+			if fadeStep() {
+				// Fade complete — reset grid and respawn
+				fading = false
+				for gy := 0; gy < gridH; gy++ {
+					for gx := 0; gx < gridW; gx++ {
+						if grid[gy][gx].state != cellLock {
+							grid[gy][gx] = gridCell{}
+						}
 					}
 				}
-			}
-			colorPool = shuffledColors()
-			colorIdx = 0
-			n = spawnCount()
-			pipes = make([]pipe, n)
-			for i := range pipes {
-				pipes[i] = spawnPipe()
+				colorPool = shuffledColors()
+				colorIdx = 0
+				n = spawnCount()
+				pipes = make([]pipe, n)
+				for i := range pipes {
+					pipes[i] = spawnPipe()
+				}
 			}
 			drawLockIcon()
+			continue
+		}
+
+		// Check ~75% fill — start fading
+		if nonLockCells > 0 && filledCount()*100/nonLockCells >= 75 {
+			startFade()
 			continue
 		}
 

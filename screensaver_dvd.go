@@ -84,7 +84,7 @@ func runDVDDemo(stopCh <-chan struct{}) bool {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
-	keyCh := make(chan byte, 1)
+	keyCh := make(chan byte, 4)
 	startKeyReader := func() {
 		go func() {
 			buf := make([]byte, 1)

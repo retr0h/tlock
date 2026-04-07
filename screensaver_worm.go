@@ -163,7 +163,7 @@ func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 	defer ticker.Stop()
 
 	// Keypress channel
-	keyCh := make(chan byte, 1)
+	keyCh := make(chan byte, 4)
 	startKeyReader := func() {
 		go func() {
 			buf := make([]byte, 1)
