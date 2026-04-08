@@ -19,11 +19,11 @@ type pipe struct {
 
 type pipesScreensaver struct{}
 
-func (p *pipesScreensaver) run(stopCh <-chan struct{}) bool {
-	return runPipesDemo(stopCh)
+func (p *pipesScreensaver) run(stopCh <-chan struct{}, keyCh <-chan byte) bool {
+	return runPipesDemo(stopCh, keyCh)
 }
 
-func runPipesDemo(stopCh <-chan struct{}) bool {
+func runPipesDemo(stopCh <-chan struct{}, keyCh <-chan byte) bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -121,17 +121,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 	ticker := time.NewTicker(80 * time.Millisecond)
 	defer ticker.Stop()
 
-	keyCh := make(chan byte, 4)
-	startKeyReader := func() {
-		go func() {
-			buf := make([]byte, 1)
-			if _, err := os.Stdin.Read(buf); err == nil {
-				keyCh <- buf[0]
-			}
-		}()
-	}
-	startKeyReader()
-
 	sigwinch := make(chan os.Signal, 1)
 	signal.Notify(sigwinch, syscall.SIGWINCH, syscall.SIGCONT)
 	defer signal.Stop(sigwinch)
@@ -215,15 +204,13 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 			return false
 		case key := <-keyCh:
 			if key < 32 && key != 13 && key != 10 {
-				startKeyReader()
 				continue
 			}
-			pw := readPasswordOverlay(true)
+			pw := readPasswordOverlay(true, keyCh)
 			if handleAuth(pw) {
 				return true
 			}
 			fullRedraw()
-			startKeyReader()
 			continue
 
 		case <-sigwinch:
