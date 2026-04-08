@@ -79,7 +79,7 @@ sudo mv tlock /usr/local/bin/
 
 ```bash
 curl -sL https://github.com/retr0h/tlock/releases/latest/download/checksums.txt -o checksums.txt
-shasum -a 256 -c checksums.txt --ignore-missing
+grep "$(uname -s | tr A-Z a-z)_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')" checksums.txt | sed 's/tlock_.*$/tlock/' | shasum -a 256 -c
 ```
 
 ### 🔨 Build from source
