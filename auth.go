@@ -92,7 +92,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func readPasswordOverlay(overlay bool) string {
+func readPasswordOverlay(overlay bool, keyCh <-chan byte) string {
 	if !overlay {
 		clearScreen()
 	}
@@ -170,13 +170,8 @@ func readPasswordOverlay(overlay bool) string {
 
 	redrawPrompt()
 
-	buf := make([]byte, 1)
 	for {
-		n, err := os.Stdin.Read(buf)
-		if err != nil || n == 0 {
-			continue
-		}
-		b := buf[0]
+		b := <-keyCh
 		switch {
 		case b == 27: // Esc — switch to Touch ID
 			close(stopBlink)

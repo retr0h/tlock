@@ -48,11 +48,11 @@ func drawLockAt(col, row int, lines []string) {
 
 type dvdScreensaver struct{}
 
-func (d *dvdScreensaver) run(stopCh <-chan struct{}) bool {
-	return runDVDDemo(stopCh)
+func (d *dvdScreensaver) run(stopCh <-chan struct{}, keyCh <-chan byte) bool {
+	return runDVDDemo(stopCh, keyCh)
 }
 
-func runDVDDemo(stopCh <-chan struct{}) bool {
+func runDVDDemo(stopCh <-chan struct{}, keyCh <-chan byte) bool {
 	tw, th := getTermSize()
 	clearScreen()
 	hideCursor()
@@ -83,24 +83,6 @@ func runDVDDemo(stopCh <-chan struct{}) bool {
 
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
-
-	keyCh := make(chan byte, 4)
-	startKeyReader := func() {
-		go func() {
-			buf := make([]byte, 1)
-			for {
-				n, err := os.Stdin.Read(buf)
-				if err != nil {
-					continue // retry on error instead of dying
-				}
-				if n > 0 {
-					keyCh <- buf[0]
-					return // exit so we don't compete with auth overlay
-				}
-			}
-		}()
-	}
-	startKeyReader()
 
 	sigwinch := make(chan os.Signal, 1)
 	signal.Notify(sigwinch, syscall.SIGWINCH, syscall.SIGCONT)
@@ -133,16 +115,14 @@ func runDVDDemo(stopCh <-chan struct{}) bool {
 		case key := <-keyCh:
 			// Ignore non-printable keys (tmux focus events), except Enter.
 			if key < 32 && key != 13 && key != 10 {
-				startKeyReader()
 				continue
 			}
-			pw := readPasswordOverlay(true)
+			pw := readPasswordOverlay(true, keyCh)
 			if handleAuth(pw) {
 				showCursor()
 				return true
 			}
 			fullRedraw()
-			startKeyReader()
 			continue
 
 		case <-sigwinch:

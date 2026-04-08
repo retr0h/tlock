@@ -24,11 +24,11 @@ type wormScreensaver struct {
 	numWorms int
 }
 
-func (ws *wormScreensaver) run(stopCh <-chan struct{}) bool {
-	return runWormDemo(ws.numWorms, stopCh)
+func (ws *wormScreensaver) run(stopCh <-chan struct{}, keyCh <-chan byte) bool {
+	return runWormDemo(ws.numWorms, stopCh, keyCh)
 }
 
-func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
+func runWormDemo(numWorms int, stopCh <-chan struct{}, keyCh <-chan byte) bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -162,24 +162,6 @@ func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 	ticker := time.NewTicker(120 * time.Millisecond)
 	defer ticker.Stop()
 
-	keyCh := make(chan byte, 4)
-	startKeyReader := func() {
-		go func() {
-			buf := make([]byte, 1)
-			for {
-				n, err := os.Stdin.Read(buf)
-				if err != nil {
-					continue
-				}
-				if n > 0 {
-					keyCh <- buf[0]
-					return
-				}
-			}
-		}()
-	}
-	startKeyReader()
-
 	// Handle resize and pane refocus
 	sigwinch := make(chan os.Signal, 1)
 	signal.Notify(sigwinch, syscall.SIGWINCH, syscall.SIGCONT)
@@ -216,16 +198,14 @@ func runWormDemo(numWorms int, stopCh <-chan struct{}) bool {
 		case key := <-keyCh:
 			// Ignore non-printable (tmux focus events)
 			if key < 32 && key != 13 && key != 10 {
-				startKeyReader()
 				continue
 			}
 			// Freeze worms — show password prompt
-			pw := readPasswordOverlay(true)
+			pw := readPasswordOverlay(true, keyCh)
 			if handleAuth(pw) {
 				return true // authenticated — unlock
 			}
 			fullRedraw()
-			startKeyReader()
 			continue
 		case <-sigwinch:
 			tw, th = getTermSize()

@@ -91,6 +91,25 @@ func main() {
 	// Ignore signals that could bypass the lock
 	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGTSTP)
 
+	// Single persistent stdin reader — shared across all screensavers.
+	// This prevents goroutine leaks when cycling between screensavers:
+	// each cycle previously left an orphan goroutine blocked on stdin.Read,
+	// stealing keypresses from the active screensaver.
+	keyCh := make(chan byte, 4)
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(buf)
+			if err != nil {
+				time.Sleep(10 * time.Millisecond)
+				continue
+			}
+			if n > 0 {
+				keyCh <- buf[0]
+			}
+		}
+	}()
+
 	isRandom := *screensaverName == "random"
 	activeName := *screensaverName
 	if isRandom {
@@ -123,7 +142,7 @@ func main() {
 			go func() {
 				ss := buildScreensaver(current)
 				if ss != nil {
-					authCh <- ss.run(stopCh)
+					authCh <- ss.run(stopCh, keyCh)
 				} else {
 					authCh <- false
 				}
@@ -156,7 +175,7 @@ func main() {
 				}
 			} else {
 				ss := buildScreensaver(activeName)
-				if ss != nil && ss.run(neverStop) {
+				if ss != nil && ss.run(neverStop, keyCh) {
 					return
 				}
 			}
@@ -164,7 +183,7 @@ func main() {
 			// Show password prompt; switch to screensaver after idle timeout
 			pwCh := make(chan string, 1)
 			go func() {
-				pwCh <- readPasswordOverlay(false)
+				pwCh <- readPasswordOverlay(false, keyCh)
 			}()
 
 			timer := time.NewTimer(delay)
@@ -182,7 +201,7 @@ func main() {
 					}
 				} else {
 					ss := buildScreensaver(activeName)
-					if ss != nil && ss.run(neverStop) {
+					if ss != nil && ss.run(neverStop, keyCh) {
 						return
 					}
 				}
@@ -190,7 +209,7 @@ func main() {
 			}
 		} else {
 			// No screensaver — password prompt only
-			pw := readPasswordOverlay(false)
+			pw := readPasswordOverlay(false, keyCh)
 			if handleAuth(pw) {
 				return
 			}

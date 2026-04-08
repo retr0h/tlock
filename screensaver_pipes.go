@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -19,11 +20,11 @@ type pipe struct {
 
 type pipesScreensaver struct{}
 
-func (p *pipesScreensaver) run(stopCh <-chan struct{}) bool {
-	return runPipesDemo(stopCh)
+func (p *pipesScreensaver) run(stopCh <-chan struct{}, keyCh <-chan byte) bool {
+	return runPipesDemo(stopCh, keyCh)
 }
 
-func runPipesDemo(stopCh <-chan struct{}) bool {
+func runPipesDemo(stopCh <-chan struct{}, keyCh <-chan byte) bool {
 	tw, th := getTermSize()
 	clearScreen()
 
@@ -78,7 +79,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 	}
 
 	spawnPipe := func() pipe {
-		// Find a random empty cell for spawn
 		for attempts := 0; attempts < 200; attempts++ {
 			x := rand.Intn(gridW)
 			y := rand.Intn(gridH)
@@ -92,7 +92,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 				}
 			}
 		}
-		// Fallback: spawn anywhere (will be blocked immediately and handled)
 		return pipe{
 			x:     rand.Intn(gridW),
 			y:     rand.Intn(gridH),
@@ -108,8 +107,9 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		pipes[i] = spawnPipe()
 	}
 
-	// Count non-lock cells for fill ratio tracking
+	// Count non-lock cells and track filled cells incrementally
 	nonLockCells := 0
+	filledCells := 0
 	for gy := 0; gy < gridH; gy++ {
 		for gx := 0; gx < gridW; gx++ {
 			if grid[gy][gx].state != cellLock {
@@ -118,26 +118,12 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		}
 	}
 
+	// Buffered writer — batch all terminal output per tick
+	w := bufio.NewWriter(os.Stdout)
+	flush := func() { _ = w.Flush() }
+
 	ticker := time.NewTicker(80 * time.Millisecond)
 	defer ticker.Stop()
-
-	keyCh := make(chan byte, 4)
-	startKeyReader := func() {
-		go func() {
-			buf := make([]byte, 1)
-			for {
-				n, err := os.Stdin.Read(buf)
-				if err != nil {
-					continue
-				}
-				if n > 0 {
-					keyCh <- buf[0]
-					return
-				}
-			}
-		}()
-	}
-	startKeyReader()
 
 	sigwinch := make(chan os.Signal, 1)
 	signal.Notify(sigwinch, syscall.SIGWINCH, syscall.SIGCONT)
@@ -161,24 +147,9 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		drawLockIcon()
 	}
 
-	// Count filled (body+trail) cells to detect ~75% full
-	filledCount := func() int {
-		count := 0
-		for gy := 0; gy < gridH; gy++ {
-			for gx := 0; gx < gridW; gx++ {
-				s := grid[gy][gx].state
-				if s == cellBody || s == cellTrail {
-					count++
-				}
-			}
-		}
-		return count
-	}
-
-	// Fading state — when true, pipes stop growing and cells fade out
+	// Fading state
 	fading := false
 
-	// Start fading: convert all body cells to trail
 	startFade := func() {
 		fading = true
 		for gy := 0; gy < gridH; gy++ {
@@ -192,7 +163,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		}
 	}
 
-	// Step one fade tick — returns true when all cells are empty
 	fadeStep := func() bool {
 		allGone := true
 		for gy := 0; gy < gridH; gy++ {
@@ -213,7 +183,11 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		return allGone
 	}
 
-	// Initial draw of the lock icon
+	// Cell availability check (no closure allocation per tick)
+	canMove := func(gx, gy int) bool {
+		return grid[gy][gx].state == cellEmpty
+	}
+
 	drawLockIcon()
 
 	for {
@@ -222,15 +196,13 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 			return false
 		case key := <-keyCh:
 			if key < 32 && key != 13 && key != 10 {
-				startKeyReader()
 				continue
 			}
-			pw := readPasswordOverlay(true)
+			pw := readPasswordOverlay(true, keyCh)
 			if handleAuth(pw) {
 				return true
 			}
 			fullRedraw()
-			startKeyReader()
 			continue
 
 		case <-sigwinch:
@@ -238,12 +210,10 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 			gridW = tw / cellW
 			gridH = th / cellH
 
-			// Rebuild grid to new size
 			newGrid := make([][]gridCell, gridH)
 			for y := range newGrid {
 				newGrid[y] = make([]gridCell, gridW)
 			}
-			// Copy existing grid state within new bounds
 			for gy := 0; gy < gridH; gy++ {
 				for gx := 0; gx < gridW; gx++ {
 					if gy < len(grid) && gx < len(grid[gy]) {
@@ -251,7 +221,6 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 					}
 				}
 			}
-			// Re-reserve lock icon area
 			for ly := 0; ly <= lockPad; ly++ {
 				for lx := 0; lx <= lockPad; lx++ {
 					if ly < gridH && lx < gridW {
@@ -261,17 +230,20 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 			}
 			grid = newGrid
 
-			// Recalculate non-lock cells
 			nonLockCells = 0
+			filledCells = 0
 			for gy := 0; gy < gridH; gy++ {
 				for gx := 0; gx < gridW; gx++ {
-					if grid[gy][gx].state != cellLock {
+					s := grid[gy][gx].state
+					if s != cellLock {
 						nonLockCells++
+					}
+					if s == cellBody || s == cellTrail {
+						filledCells++
 					}
 				}
 			}
 
-			// Kill pipes that are now out of bounds
 			for i := range pipes {
 				if pipes[i].x >= gridW || pipes[i].y >= gridH {
 					pipes[i].alive = false
@@ -284,11 +256,11 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		case <-ticker.C:
 		}
 
-		// If fading, step the fade and check if done
+		// Fading phase
 		if fading {
 			if fadeStep() {
-				// Fade complete — reset grid and respawn
 				fading = false
+				filledCells = 0
 				for gy := 0; gy < gridH; gy++ {
 					for gx := 0; gx < gridW; gx++ {
 						if grid[gy][gx].state != cellLock {
@@ -305,12 +277,14 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 				}
 			}
 			drawLockIcon()
+			flush()
 			continue
 		}
 
-		// Check ~75% fill — start fading
-		if nonLockCells > 0 && filledCount()*100/nonLockCells >= 75 {
+		// Check fill ratio with incremental counter (no grid scan)
+		if nonLockCells > 0 && filledCells*100/nonLockCells >= 75 {
 			startFade()
+			flush()
 			continue
 		}
 
@@ -318,15 +292,13 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 		for i := range pipes {
 			p := &pipes[i]
 			if !p.alive {
-				// Respawn dead pipe
 				*p = spawnPipe()
-				// Draw spawn cell
 				grid[p.y][p.x] = gridCell{state: cellBody, color: p.color}
 				drawBlock(p.x, p.y, "\u2588", p.color)
+				filledCells++
 				continue
 			}
 
-			// ~12% chance of a random 90° turn each tick
 			if rand.Intn(100) < 12 {
 				turn := 1
 				if rand.Intn(2) == 0 {
@@ -335,17 +307,10 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 				p.dir = (p.dir + turn + 4) % 4
 			}
 
-			// Next position (wrapping)
 			nx := ((p.x + dx[p.dir]) + gridW) % gridW
 			ny := ((p.y + dy[p.dir]) + gridH) % gridH
 
-			// Check if next cell is available (empty only — pipes are solid)
-			canMove := func(gx, gy int) bool {
-				return grid[gy][gx].state == cellEmpty
-			}
-
 			if !canMove(nx, ny) {
-				// Try turning left or right
 				moved := false
 				for _, turn := range []int{1, -1} {
 					tryDir := (p.dir + turn + 4) % 4
@@ -360,19 +325,19 @@ func runPipesDemo(stopCh <-chan struct{}) bool {
 					}
 				}
 				if !moved {
-					// Blocked on all sides — kill and respawn next tick
 					p.alive = false
 					continue
 				}
 			}
 
-			// Pipe cells stay solid — no trail conversion
 			p.x = nx
 			p.y = ny
 			grid[ny][nx] = gridCell{state: cellBody, color: p.color}
 			drawBlock(nx, ny, "\u2588", p.color)
+			filledCells++
 		}
 
 		drawLockIcon()
+		flush()
 	}
 }
