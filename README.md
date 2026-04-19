@@ -60,6 +60,15 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 
 ## 📦 Install
 
+```bash
+curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh
+```
+
+Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root) — SHA256 checksums verified. Override with `TLOCK_INSTALL_DIR=/some/path` or pin a version with `TLOCK_VERSION=1.1.1`.
+
+<details>
+<summary>Manual install</summary>
+
 ### ⬇️ Download binary (macOS)
 
 Grab the latest release for your architecture:
@@ -81,6 +90,8 @@ sudo mv tlock /usr/local/bin/
 curl -sL https://github.com/retr0h/tlock/releases/latest/download/checksums.txt -o checksums.txt
 grep "$(uname -s | tr A-Z a-z)_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')" checksums.txt | sed 's/tlock_.*$/tlock/' | shasum -a 256 -c
 ```
+
+</details>
 
 ### 🔨 Build from source
 
