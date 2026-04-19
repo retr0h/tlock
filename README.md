@@ -169,4 +169,6 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 
 ## 📄 License
 
-[MIT](LICENSE) - John Dewey
+The [MIT][] License.
+
+[MIT]: LICENSE
