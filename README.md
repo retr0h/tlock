@@ -116,14 +116,47 @@ tlock --random --cycle 5m      # Rotate screensaver every 5 min
 tlock --worms --delay 30s      # Worms after 30s idle
 ```
 
-As a tmux lock command:
+### 🖥️ Tmux integration
+
+tlock ships as a **tmux plugin**. One line in `~/.tmux.conf` wires
+tmux's native lock machinery (`lock-command`, `lock-after-time`, and
+a manual `lock-server` keybind) to tlock with sensible defaults.
+
+#### Install via [TPM](https://github.com/tmux-plugins/tpm) (recommended)
 
 ```tmux
-# ~/.tmux.conf
-set -g lock-command "tlock --random --cycle 5m"
-set -g lock-after-time 1800    # Lock after 30 min idle
-bind ^X lock-server            # Ctrl+X to lock now
+set -g @plugin 'retr0h/tlock'
 ```
+
+Then `<prefix> I` inside tmux to install. You can now remove any
+standalone `set -g lock-command ...` and `set -g lock-after-time ...`
+lines — the plugin owns them.
+
+#### Configurable options
+
+```tmux
+set -g @tlock-binary   '/custom/path/to/tlock'  # override binary location
+                                                # (default: ~/.local/bin/tlock,
+                                                # falls back to $PATH lookup)
+set -g @tlock-args     '--random --cycle 5m'    # flags passed to tlock
+set -g @tlock-timeout  '1800'                   # lock-after-time in seconds
+                                                # (0 disables auto-lock)
+set -g @tlock-key      'C-x'                    # <prefix> + this key to lock now
+```
+
+#### Manual install (no TPM)
+
+If you don't use TPM, drop the equivalent into your `~/.tmux.conf`
+yourself:
+
+```tmux
+set -g lock-command "tlock --random --cycle 5m"
+set -g lock-after-time 1800    # Lock after 30 min idle (0 = disabled)
+bind C-x lock-server           # <prefix> + Ctrl+X to lock now
+```
+
+> **Note:** you still need the `tlock` binary on `$PATH` — the tmux plugin
+> only wires up tmux.
 
 ## ⚙️ How It Works
 
