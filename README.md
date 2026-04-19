@@ -27,26 +27,19 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 
 <table align="center">
   <tr>
-    <td align="center" width="33%"><a href="asset/worms.png"><img src="asset/worms.png" width="100%" alt="Worms Screensaver"></a></td>
-    <td align="center" width="33%"><a href="asset/dvd.png"><img src="asset/dvd.png" width="100%" alt="DVD Screensaver"></a></td>
-    <td align="center" width="33%"><a href="asset/pipes.png"><img src="asset/pipes.png" width="100%" alt="Pipes Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/worms.gif"><img src="asset/worms.gif" width="100%" alt="Worms Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/dvd.gif"><img src="asset/dvd.gif" width="100%" alt="DVD Screensaver"></a></td>
+    <td align="center" width="33%"><a href="asset/pipes.gif"><img src="asset/pipes.gif" width="100%" alt="Pipes Screensaver"></a></td>
   </tr>
   <tr>
     <td align="center"><sub>Worms</sub></td>
     <td align="center"><sub>DVD</sub></td>
     <td align="center"><sub>Pipes</sub></td>
   </tr>
-  <tr>
-    <td align="center"><a href="asset/passphrase.png"><img src="asset/passphrase.png" width="100%" alt="Passphrase Prompt"></a></td>
-    <td align="center"><a href="asset/touchid.png"><img src="asset/touchid.png" width="100%" alt="Touch ID Prompt"></a></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td align="center"><sub>Passphrase</sub></td>
-    <td align="center"><sub>Touch ID</sub></td>
-    <td></td>
-  </tr>
 </table>
+
+> Recordings generated with [VHS](https://github.com/charmbracelet/vhs):
+> `vhs asset/worms.tape` / `asset/dvd.tape` / `asset/pipes.tape`.
 
 ## ✨ Features
 
