@@ -11,8 +11,8 @@ curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh
 ```
 
 The README's install section is rewritten to lead with this one-liner. The
-existing manual-download + checksum-verification snippets move into a
-collapsed `<details>` block, and the "Build from source" section is unchanged.
+existing manual-download + checksum-verification snippets move into a collapsed
+`<details>` block, and the "Build from source" section is unchanged.
 
 ## Goals
 
@@ -21,8 +21,8 @@ collapsed `<details>` block, and the "Build from source" section is unchanged.
   installing. Abort on mismatch.
 - No `sudo` required for the common case (normal user with `~/.local/bin` on
   PATH). Fall back to a private dir + symlink if nothing on PATH is writable.
-- Clear, actionable errors when the host is not macOS, the arch is
-  unrecognized, or a required tool is missing.
+- Clear, actionable errors when the host is not macOS, the arch is unrecognized,
+  or a required tool is missing.
 
 ## Non-Goals
 
@@ -61,30 +61,29 @@ Environment overrides:
    - `arm64` → `arm64`
    - `x86_64` → `amd64`
    - anything else → error with "unsupported architecture: <value>" and exit 1.
-4. **Resolve version** — if `$TLOCK_VERSION` is set, use it verbatim. Else
-   fetch `https://api.github.com/repos/retr0h/tlock/releases/latest` and parse
-   the `tag_name` field (e.g. `v1.1.1`), stripping the leading `v` for asset
-   naming.
+4. **Resolve version** — if `$TLOCK_VERSION` is set, use it verbatim. Else fetch
+   `https://api.github.com/repos/retr0h/tlock/releases/latest` and parse the
+   `tag_name` field (e.g. `v1.1.1`), stripping the leading `v` for asset naming.
 5. **Pick install dir** — apply the rules above. Compute a boolean
    `needs_symlink` for case 4.
 6. **Create temp dir** — `tmp=$(mktemp -d)`; `trap 'rm -rf "$tmp"' EXIT`.
 7. **Download** — fetch into `$tmp`:
    - `tlock_${version}_darwin_${arch}` → the binary (saved as `tlock`)
-   - `checksums.txt`
-   Use `curl -fsSL -o` (or `wget -q -O` as fallback).
+   - `checksums.txt` Use `curl -fsSL -o` (or `wget -q -O` as fallback).
 8. **Verify checksum** — filter `checksums.txt` to the line matching the
    downloaded asset name, rewrite the filename to `tlock`, and pipe into
    `shasum -a 256 -c -` (run from `$tmp`). Abort on failure with the expected
    vs. actual hash.
-9. **Strip quarantine** — `xattr -d com.apple.quarantine "$tmp/tlock" 2>/dev/null || true`
-   (harmless if the attr isn't set; curl-downloaded binaries normally won't
-   have it, but this matches the swamp.club installer and protects users who
-   curl into a file then run the installer separately).
-10. **Install** — `install -m 755 "$tmp/tlock" "$dir/tlock"`. Create
-    `$dir` first if it doesn't exist.
+9. **Strip quarantine** —
+   `xattr -d com.apple.quarantine "$tmp/tlock" 2>/dev/null || true` (harmless if
+   the attr isn't set; curl-downloaded binaries normally won't have it, but this
+   matches the swamp.club installer and protects users who curl into a file then
+   run the installer separately).
+10. **Install** — `install -m 755 "$tmp/tlock" "$dir/tlock"`. Create `$dir`
+    first if it doesn't exist.
 11. **Symlink (case 4 only)** — if `needs_symlink` and `/usr/local/bin` is
-    writable without sudo, `ln -sf "$dir/tlock" /usr/local/bin/tlock`.
-    Otherwise skip silently (the PATH hint in step 12 covers it).
+    writable without sudo, `ln -sf "$dir/tlock" /usr/local/bin/tlock`. Otherwise
+    skip silently (the PATH hint in step 12 covers it).
 12. **Summary** — print `tlock vX.Y.Z installed to <dir>/tlock`. If `<dir>` is
     not on PATH, print an explicit suggestion like:
     ```
@@ -94,37 +93,40 @@ Environment overrides:
 
 ## Error Messages
 
-All errors print to stderr with a `tlock:` prefix and exit non-zero. Each
-error names the problem and what the user should do next:
+All errors print to stderr with a `tlock:` prefix and exit non-zero. Each error
+names the problem and what the user should do next:
 
-- **Not macOS** — `tlock: macOS only. Build from source: https://github.com/retr0h/tlock#-build-from-source`
+- **Not macOS** —
+  `tlock: macOS only. Build from source: https://github.com/retr0h/tlock#-build-from-source`
 - **Bad arch** — `tlock: unsupported architecture: <value>`
 - **No curl/wget** — `tlock: neither curl nor wget found on PATH`
 - **Download failed** — `tlock: failed to download <url>`
-- **Checksum mismatch** — `tlock: checksum mismatch for tlock_<ver>_darwin_<arch>`
-  followed by expected vs actual hashes.
-- **Install dir write failure** — `tlock: cannot write to <dir>` with the
-  actual error from `install`.
+- **Checksum mismatch** —
+  `tlock: checksum mismatch for tlock_<ver>_darwin_<arch>` followed by expected
+  vs actual hashes.
+- **Install dir write failure** — `tlock: cannot write to <dir>` with the actual
+  error from `install`.
 
 ## README Rewrite
 
 Replace the current `## 📦 Install` section. Keep the header and emoji style.
-Lead with the one-liner, move the current manual-download and
-verify-checksum blocks into a collapsed `<details>` disclosure, leave "Build
-from source" unchanged.
+Lead with the one-liner, move the current manual-download and verify-checksum
+blocks into a collapsed `<details>` disclosure, leave "Build from source"
+unchanged.
 
 New structure:
 
-```markdown
+````markdown
 ## 📦 Install
 
 ```bash
 curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh
 ```
+````
 
-Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root only).
-Checksums are verified. Override with `TLOCK_INSTALL_DIR=/some/path` or
-pin a version with `TLOCK_VERSION=1.1.1`.
+Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root only). Checksums
+are verified. Override with `TLOCK_INSTALL_DIR=/some/path` or pin a version with
+`TLOCK_VERSION=1.1.1`.
 
 <details>
 <summary>Manual install</summary>
@@ -136,6 +138,7 @@ pin a version with `TLOCK_VERSION=1.1.1`.
 ### 🔨 Build from source
 
 (unchanged)
+
 ```
 
 ## Testing
@@ -164,3 +167,4 @@ pin a version with `TLOCK_VERSION=1.1.1`.
 - Publishing the installer as a release asset (URL stays on `main`, so the
   latest installer always reflects current behavior; version pinning is a
   script-level env var, not a URL-level concern).
+```

@@ -1,12 +1,24 @@
 # Curl Install Script Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a POSIX `sh` installer at the repo root so users can install tlock with `curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh`, with SHA256 verification and swamp.club-style destination logic.
+**Goal:** Ship a POSIX `sh` installer at the repo root so users can install
+tlock with
+`curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh`, with
+SHA256 verification and swamp.club-style destination logic.
 
-**Architecture:** Single POSIX shell script (`install.sh`) at repo root. macOS-only. Resolves version from GitHub API (or `TLOCK_VERSION` env), picks an install dir per user privileges + PATH, downloads binary and `checksums.txt` from `github.com/retr0h/tlock/releases/latest/download/...`, verifies SHA256, strips quarantine xattr, installs with `install -m 755`. README's install section is rewritten to lead with the one-liner. Shellcheck enforced in CI.
+**Architecture:** Single POSIX shell script (`install.sh`) at repo root.
+macOS-only. Resolves version from GitHub API (or `TLOCK_VERSION` env), picks an
+install dir per user privileges + PATH, downloads binary and `checksums.txt`
+from `github.com/retr0h/tlock/releases/latest/download/...`, verifies SHA256,
+strips quarantine xattr, installs with `install -m 755`. README's install
+section is rewritten to lead with the one-liner. Shellcheck enforced in CI.
 
-**Tech Stack:** POSIX `sh`, `curl`/`wget`, `shasum`, GitHub Releases, shellcheck, GitHub Actions.
+**Tech Stack:** POSIX `sh`, `curl`/`wget`, `shasum`, GitHub Releases,
+shellcheck, GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-04-18-curl-install-script-design.md`
 
@@ -14,9 +26,12 @@
 
 ### Task 1: Wire up shellcheck in CI
 
-Add a shellcheck job to the existing Go workflow so every PR that touches `install.sh` gets linted. We do this first so the script is under static analysis from the first commit.
+Add a shellcheck job to the existing Go workflow so every PR that touches
+`install.sh` gets linted. We do this first so the script is under static
+analysis from the first commit.
 
 **Files:**
+
 - Modify: `.github/workflows/go.yml`
 
 - [ ] **Step 1: Add shellcheck job**
@@ -29,9 +44,9 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 jobs:
   build:
@@ -60,14 +75,17 @@ jobs:
           fi
 ```
 
-The conditional guard keeps the first commit green. We remove the guard in Task 2 once the file lands.
+The conditional guard keeps the first commit green. We remove the guard in Task
+2 once the file lands.
 
 - [ ] **Step 2: Verify YAML parses**
 
-Run: `yq '.jobs.shellcheck.runs-on' .github/workflows/go.yml`
-Expected: `ubuntu-latest`
+Run: `yq '.jobs.shellcheck.runs-on' .github/workflows/go.yml` Expected:
+`ubuntu-latest`
 
-If `yq` is not installed: `python3 -c 'import yaml; print(yaml.safe_load(open(".github/workflows/go.yml"))["jobs"]["shellcheck"]["runs-on"])'` → `ubuntu-latest`
+If `yq` is not installed:
+`python3 -c 'import yaml; print(yaml.safe_load(open(".github/workflows/go.yml"))["jobs"]["shellcheck"]["runs-on"])'`
+→ `ubuntu-latest`
 
 - [ ] **Step 3: Commit**
 
@@ -80,9 +98,12 @@ git commit -m "ci: add shellcheck job (conditional until install.sh lands)"
 
 ### Task 2: Skeleton with OS/arch detection
 
-Land the first version of `install.sh`: shebang, strict mode, OS gate, arch detection. No download yet — the script just prints what it would do and exits. This is the smallest commit that proves the header + platform checks work.
+Land the first version of `install.sh`: shebang, strict mode, OS gate, arch
+detection. No download yet — the script just prints what it would do and exits.
+This is the smallest commit that proves the header + platform checks work.
 
 **Files:**
+
 - Create: `install.sh`
 - Modify: `.github/workflows/go.yml` (drop the conditional)
 
@@ -139,27 +160,27 @@ chmod +x install.sh
 ./install.sh
 ```
 
-Expected on darwin/arm64: `tlock: detected darwin/arm64`
-Expected on darwin/amd64: `tlock: detected darwin/amd64`
+Expected on darwin/arm64: `tlock: detected darwin/arm64` Expected on
+darwin/amd64: `tlock: detected darwin/amd64`
 
 - [ ] **Step 3: Run shellcheck locally**
 
-Run: `shellcheck install.sh`
-Expected: no output (clean exit 0)
+Run: `shellcheck install.sh` Expected: no output (clean exit 0)
 
 If shellcheck isn't installed: `brew install shellcheck` first.
 
 - [ ] **Step 4: Drop the conditional guard from CI**
 
-Edit `.github/workflows/go.yml`, replacing the shellcheck step with the unconditional form:
+Edit `.github/workflows/go.yml`, replacing the shellcheck step with the
+unconditional form:
 
 ```yaml
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Run shellcheck
-        run: shellcheck install.sh
+shellcheck:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v6
+    - name: Run shellcheck
+      run: shellcheck install.sh
 ```
 
 - [ ] **Step 5: Commit**
@@ -173,9 +194,12 @@ git commit -m "feat: add install.sh skeleton with OS/arch detection"
 
 ### Task 3: Version resolution
 
-Add the logic that picks which version to install — `TLOCK_VERSION` env var if set, else the latest release tag from the GitHub API. Print it and still exit without downloading.
+Add the logic that picks which version to install — `TLOCK_VERSION` env var if
+set, else the latest release tag from the GitHub API. Print it and still exit
+without downloading.
 
 **Files:**
+
 - Modify: `install.sh`
 
 - [ ] **Step 1: Add `resolve_version`**
@@ -226,23 +250,22 @@ main() {
 
 - [ ] **Step 2: Run with latest (default)**
 
-Run: `./install.sh`
-Expected (current latest): `tlock: darwin/arm64 version 1.1.1` (or amd64 on Intel)
+Run: `./install.sh` Expected (current latest):
+`tlock: darwin/arm64 version 1.1.1` (or amd64 on Intel)
 
 - [ ] **Step 3: Run with a pinned version**
 
-Run: `TLOCK_VERSION=1.1.0 ./install.sh`
-Expected: `tlock: darwin/arm64 version 1.1.0`
+Run: `TLOCK_VERSION=1.1.0 ./install.sh` Expected:
+`tlock: darwin/arm64 version 1.1.0`
 
 Also verify the `v` prefix is stripped:
 
-Run: `TLOCK_VERSION=v1.0.0 ./install.sh`
-Expected: `tlock: darwin/arm64 version 1.0.0`
+Run: `TLOCK_VERSION=v1.0.0 ./install.sh` Expected:
+`tlock: darwin/arm64 version 1.0.0`
 
 - [ ] **Step 4: Run shellcheck**
 
-Run: `shellcheck install.sh`
-Expected: no output.
+Run: `shellcheck install.sh` Expected: no output.
 
 - [ ] **Step 5: Commit**
 
@@ -255,9 +278,13 @@ git commit -m "feat(install): resolve latest version from GitHub API with TLOCK_
 
 ### Task 4: Install directory resolution
 
-Add the swamp-style destination logic: root → `/usr/local/bin`, else `$HOME/.local/bin` or `$HOME/bin` if on PATH, else fallback to `$HOME/.tlock/bin` with a symlink flag. Respect `TLOCK_INSTALL_DIR`. Still no download.
+Add the swamp-style destination logic: root → `/usr/local/bin`, else
+`$HOME/.local/bin` or `$HOME/bin` if on PATH, else fallback to
+`$HOME/.tlock/bin` with a symlink flag. Respect `TLOCK_INSTALL_DIR`. Still no
+download.
 
 **Files:**
+
 - Modify: `install.sh`
 
 - [ ] **Step 1: Add `path_contains` and `resolve_install_dir`**
@@ -343,8 +370,7 @@ Expected: `→ /Users/.../bin (symlink=0)`
 
 - [ ] **Step 6: Run shellcheck**
 
-Run: `shellcheck install.sh`
-Expected: no output.
+Run: `shellcheck install.sh` Expected: no output.
 
 - [ ] **Step 7: Commit**
 
@@ -357,9 +383,12 @@ git commit -m "feat(install): resolve install directory with PATH-aware rules"
 
 ### Task 5: Download and checksum verification
 
-Add the download + verify phase. Download the binary and `checksums.txt` into a temp dir, verify SHA256, strip the quarantine attribute. Still stop short of installing so we can test checksum handling in isolation.
+Add the download + verify phase. Download the binary and `checksums.txt` into a
+temp dir, verify SHA256, strip the quarantine attribute. Still stop short of
+installing so we can test checksum handling in isolation.
 
 **Files:**
+
 - Modify: `install.sh`
 
 - [ ] **Step 1: Add temp dir setup and download logic**
@@ -430,7 +459,8 @@ main() {
 TLOCK_INSTALL_DIR=/tmp/tlock-test ./install.sh
 ```
 
-Expected final line: `tlock: verified 1.1.1, ready to install to /tmp/tlock-test`
+Expected final line:
+`tlock: verified 1.1.1, ready to install to /tmp/tlock-test`
 
 Confirm temp dir was cleaned up:
 
@@ -438,11 +468,13 @@ Confirm temp dir was cleaned up:
 ls /tmp/ | grep -i tlock.*install
 ```
 
-Expected: only `tlock-test` (the override dir, if it existed), no `mktemp` leftovers.
+Expected: only `tlock-test` (the override dir, if it existed), no `mktemp`
+leftovers.
 
 - [ ] **Step 3: Test checksum failure path**
 
-Temporarily break the checksum by patching the script to download a different asset:
+Temporarily break the checksum by patching the script to download a different
+asset:
 
 ```bash
 sed -i.bak 's/tlock_${version}_darwin_${arch}/tlock_${version}_darwin_amd64/' install.sh
@@ -453,12 +485,13 @@ mv install.sh.bak install.sh
 
 Expected output includes `tlock: checksum mismatch` and `exit=1`.
 
-(Skip this step on Intel Macs — the mismatch won't trigger. Instead, manually edit a checksum byte in a local copy of `checksums.txt` and point the script at a file URL.)
+(Skip this step on Intel Macs — the mismatch won't trigger. Instead, manually
+edit a checksum byte in a local copy of `checksums.txt` and point the script at
+a file URL.)
 
 - [ ] **Step 4: Run shellcheck**
 
-Run: `shellcheck install.sh`
-Expected: no output.
+Run: `shellcheck install.sh` Expected: no output.
 
 - [ ] **Step 5: Commit**
 
@@ -471,9 +504,11 @@ git commit -m "feat(install): download binary and verify SHA256 checksum"
 
 ### Task 6: Install, symlink, and PATH hint
 
-The final piece of the script: actually install the binary, optionally symlink into `/usr/local/bin`, and print a PATH hint when the install dir isn't on PATH.
+The final piece of the script: actually install the binary, optionally symlink
+into `/usr/local/bin`, and print a PATH hint when the install dir isn't on PATH.
 
 **Files:**
+
 - Modify: `install.sh`
 
 - [ ] **Step 1: Add install logic**
@@ -538,6 +573,7 @@ PATH=/usr/bin:/bin ./install.sh
 ```
 
 Expected output includes:
+
 ```
 tlock vX.Y.Z installed to /Users/.../.tlock/bin/tlock
 
@@ -562,8 +598,7 @@ Clean up: `rm -f "$HOME/.local/bin/tlock"`
 
 - [ ] **Step 5: Run shellcheck**
 
-Run: `shellcheck install.sh`
-Expected: no output.
+Run: `shellcheck install.sh` Expected: no output.
 
 - [ ] **Step 6: Commit**
 
@@ -576,14 +611,17 @@ git commit -m "feat(install): install binary with optional symlink and PATH hint
 
 ### Task 7: Rewrite README install section
 
-Replace the verbose per-arch curl blocks with the one-liner, collapse the existing instructions under `<details>`, keep Build from source unchanged.
+Replace the verbose per-arch curl blocks with the one-liner, collapse the
+existing instructions under `<details>`, keep Build from source unchanged.
 
 **Files:**
+
 - Modify: `README.md` (lines 61–92)
 
 - [ ] **Step 1: Read the current section**
 
-Open `README.md`. The target block is everything between `## 📦 Install` and `## 🚀 Usage`.
+Open `README.md`. The target block is everything between `## 📦 Install` and
+`## 🚀 Usage`.
 
 - [ ] **Step 2: Replace the install section**
 
@@ -596,7 +634,9 @@ Replace that block with:
 curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh
 ```
 
-Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root). SHA256 checksums are verified against the release. Override the destination with `TLOCK_INSTALL_DIR=/some/path` or pin a version with `TLOCK_VERSION=1.1.1`.
+Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root). SHA256
+checksums are verified against the release. Override the destination with
+`TLOCK_INSTALL_DIR=/some/path` or pin a version with `TLOCK_VERSION=1.1.1`.
 
 <details>
 <summary>Manual install</summary>
@@ -633,19 +673,17 @@ cd tlock
 go build -o tlock .
 sudo mv tlock /usr/local/bin/
 ```
-
 ````
 
 - [ ] **Step 3: Verify rendered markdown**
 
-Run: `grep -c 'curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh' README.md`
+Run:
+`grep -c 'curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh' README.md`
 Expected: `1`
 
-Run: `grep -c '<details>' README.md`
-Expected: `1`
+Run: `grep -c '<details>' README.md` Expected: `1`
 
-Run: `grep -c '### 🔨 Build from source' README.md`
-Expected: `1`
+Run: `grep -c '### 🔨 Build from source' README.md` Expected: `1`
 
 - [ ] **Step 4: Run docs lint if present**
 
@@ -666,7 +704,8 @@ git commit -m "docs: lead install section with curl one-liner"
 
 ### Task 8: End-to-end smoke test and PR
 
-Verify the complete script against the actual URL from a fresh shell and open the PR.
+Verify the complete script against the actual URL from a fresh shell and open
+the PR.
 
 **Files:** none (manual verification + PR creation).
 
@@ -679,7 +718,8 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" sh -c \
 "$HOME/.local/bin/tlock" --help 2>&1 | head -3
 ```
 
-Replace `REPLACE_WITH_BRANCH` with your feature branch name (since the URL isn't on `main` yet). Expected: version banner + help text.
+Replace `REPLACE_WITH_BRANCH` with your feature branch name (since the URL isn't
+on `main` yet). Expected: version banner + help text.
 
 Clean up: `rm -f "$HOME/.local/bin/tlock"`
 
@@ -690,7 +730,8 @@ TLOCK_VERSION=1.1.0 TLOCK_INSTALL_DIR=/tmp/tlock-pin sh install.sh
 /tmp/tlock-pin/tlock --help 2>&1 | head -1
 ```
 
-Expected: binary installed, help output works (1.1.0 behavior, whatever that was).
+Expected: binary installed, help output works (1.1.0 behavior, whatever that
+was).
 
 Clean up: `rm -rf /tmp/tlock-pin`
 
@@ -739,6 +780,7 @@ Expected: both `build` and `shellcheck` pass.
 ## Self-Review
 
 **Spec coverage:**
+
 - One-liner install command → Task 2, 7
 - macOS-only OS gate → Task 2
 - Arch detection (arm64, amd64) → Task 2
@@ -758,11 +800,18 @@ Expected: both `build` and `shellcheck` pass.
 
 All spec requirements are covered.
 
-**Placeholder scan:** No TBDs, TODOs, "implement later", or "similar to" references. Every code step has complete code.
+**Placeholder scan:** No TBDs, TODOs, "implement later", or "similar to"
+references. Every code step has complete code.
 
 **Type / name consistency:**
-- `$arch`, `$version`, `$install_dir`, `$needs_symlink`, `$tmp` — defined in Tasks 2–5, used consistently after.
-- `err`, `have`, `http_get`, `path_contains`, `resolve_version`, `resolve_install_dir`, `setup_tmp`, `download`, `verify_checksum`, `strip_quarantine`, `install_binary`, `maybe_symlink`, `print_summary` — all defined once, called once from `main`.
-- `tlock_${version}_darwin_${arch}` asset name is consistent between `download` and `verify_checksum`.
+
+- `$arch`, `$version`, `$install_dir`, `$needs_symlink`, `$tmp` — defined in
+  Tasks 2–5, used consistently after.
+- `err`, `have`, `http_get`, `path_contains`, `resolve_version`,
+  `resolve_install_dir`, `setup_tmp`, `download`, `verify_checksum`,
+  `strip_quarantine`, `install_binary`, `maybe_symlink`, `print_summary` — all
+  defined once, called once from `main`.
+- `tlock_${version}_darwin_${arch}` asset name is consistent between `download`
+  and `verify_checksum`.
 
 Plan is ready for execution.
