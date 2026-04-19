@@ -5,3 +5,5 @@ docs/node_modules/
 docs/bun.lock
 .just/remote/
 .superpowers/
+
+/tlock
