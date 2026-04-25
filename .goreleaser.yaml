@@ -15,6 +15,14 @@ builds:
       - arm64
     flags:
       - -tags=cgo
+    # Stamp build identity into the binary so `tlock --version` reports
+    # the release tag, commit, and build date instead of the empty
+    # defaults caarlos0/go-version falls back to under `go build`.
+    ldflags:
+      - -s -w -X {{ .ModulePath }}/cmd.date={{ .CommitDate }}
+      - -X {{ .ModulePath }}/cmd.commit={{ .Commit }}
+      - -X {{ .ModulePath }}/cmd.version={{ .Version }}
+      - -X {{ .ModulePath }}/cmd.builtBy=goreleaser
 
 archives:
   - formats:
