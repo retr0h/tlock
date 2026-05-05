@@ -30,6 +30,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/retr0h/tlock/internal/cli"
 	"github.com/retr0h/tlock/internal/tlock"
 )
 
@@ -125,6 +126,21 @@ func init() {
 // Execute runs the cobra command tree. main.go is just a shell that
 // calls this — non-zero exit propagates the error up to the OS.
 func Execute() {
+	// Wrap cobra's default help to print the themed banner above it.
+	// SetHelpFunc fires for `tlock --help` and for the bare-command
+	// fallback alike, so the banner shows in both paths without
+	// duplicating itself.
+	defaultHelp := rootCmd.HelpFunc()
+	rootCmd.SetHelpFunc(func(c *cobra.Command, args []string) {
+		if c == rootCmd {
+			out := c.OutOrStdout()
+			_, _ = fmt.Fprintln(out)
+			_, _ = fmt.Fprint(out, cli.Banner(out))
+			_, _ = fmt.Fprintln(out)
+		}
+		defaultHelp(c, args)
+	})
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
