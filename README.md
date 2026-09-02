@@ -24,7 +24,9 @@ ____________   _____________________
 
 <p align="center">🔒 Lock your terminal. Unlock with your fingerprint.</p>
 
-A terminal lock screen for macOS that uses **Touch ID** for biometric unlock with **macOS password** fallback. Drop it into tmux as your `lock-command` and walk away.
+A terminal lock screen for macOS that uses **Touch ID** for biometric unlock
+with **macOS password** fallback. Drop it into tmux as your `lock-command` and
+walk away.
 
 <table align="center">
   <tr>
@@ -58,7 +60,9 @@ A terminal lock screen for macOS that uses **Touch ID** for biometric unlock wit
 curl -fsSL https://github.com/retr0h/tlock/raw/main/install.sh | sh
 ```
 
-Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root) — SHA256 checksums verified. Override with `TLOCK_INSTALL_DIR=/some/path` or pin a version with `TLOCK_VERSION=1.1.1`.
+Installs to `~/.local/bin`, `~/bin`, or `/usr/local/bin` (root) — SHA256
+checksums verified. Override with `TLOCK_INSTALL_DIR=/some/path` or pin a
+version with `TLOCK_VERSION=1.1.1`.
 
 <details>
 <summary>Manual install</summary>
@@ -112,9 +116,9 @@ tlock --worms --delay 30s      # Worms after 30s idle
 
 ### 🖥️ Tmux integration
 
-tlock ships as a **tmux plugin**. One line in `~/.tmux.conf` wires
-tmux's native lock machinery (`lock-command`, `lock-after-time`, and
-a manual `lock-server` keybind) to tlock with sensible defaults.
+tlock ships as a **tmux plugin**. One line in `~/.tmux.conf` wires tmux's native
+lock machinery (`lock-command`, `lock-after-time`, and a manual `lock-server`
+keybind) to tlock with sensible defaults.
 
 #### Install via [TPM](https://github.com/tmux-plugins/tpm) (recommended)
 
@@ -122,9 +126,9 @@ a manual `lock-server` keybind) to tlock with sensible defaults.
 set -g @plugin 'retr0h/tlock'
 ```
 
-Then `<prefix> I` inside tmux to install. You can now remove any
-standalone `set -g lock-command ...` and `set -g lock-after-time ...`
-lines — the plugin owns them.
+Then `<prefix> I` inside tmux to install. You can now remove any standalone
+`set -g lock-command ...` and `set -g lock-after-time ...` lines — the plugin
+owns them.
 
 #### Configurable options
 
@@ -140,8 +144,7 @@ set -g @tlock-key      'C-x'                    # <prefix> + this key to lock no
 
 #### Manual install (no TPM)
 
-If you don't use TPM, drop the equivalent into your `~/.tmux.conf`
-yourself:
+If you don't use TPM, drop the equivalent into your `~/.tmux.conf` yourself:
 
 ```tmux
 set -g lock-command "tlock --random --cycle 5m"
@@ -149,14 +152,17 @@ set -g lock-after-time 1800    # Lock after 30 min idle (0 = disabled)
 bind C-x lock-server           # <prefix> + Ctrl+X to lock now
 ```
 
-> **Note:** you still need the `tlock` binary on `$PATH` — the tmux plugin
-> only wires up tmux.
+> **Note:** you still need the `tlock` binary on `$PATH` — the tmux plugin only
+> wires up tmux.
 
 ## ⚙️ How It Works
 
-tlock brings the classic [xlock](https://linux.die.net/man/1/xlock) experience to your terminal — an animated screensaver that kicks in when your terminal is locked, with authentication required to dismiss it.
+tlock brings the classic [xlock](https://linux.die.net/man/1/xlock) experience
+to your terminal — an animated screensaver that kicks in when your terminal is
+locked, with authentication required to dismiss it.
 
-1. 🎨 **Pick a screensaver** — `--worms`, `--pipes`, `--dvd` (bouncing lock), or `--random`
+1. 🎨 **Pick a screensaver** — `--worms`, `--pipes`, `--dvd` (bouncing lock), or
+   `--random`
 2. ⌨️ **Any keypress** pauses the screensaver and shows the passphrase prompt
 3. 🔑 **Type your macOS password** and press Enter to unlock
 4. 🖐️ **Press Esc** to switch to Touch ID — authenticate with your fingerprint
@@ -165,7 +171,8 @@ tlock brings the classic [xlock](https://linux.die.net/man/1/xlock) experience t
 
 Without a screensaver flag, tlock shows the passphrase prompt directly.
 
-All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authentication. 🔐
+All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is
+authentication. 🔐
 
 ## 📋 Requirements
 
@@ -175,16 +182,19 @@ All signals (SIGINT, SIGTERM, SIGTSTP) are ignored. The only way out is authenti
 
 ## 💡 Inspiration
 
-tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11 screen locker from the 90s that shipped with most Unix workstations. The worm screensaver mode (`xlock -mode worm`) by David Bagley was a staple of SGI Indigos and Sun workstations in dimly lit server rooms everywhere.
+tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
+screen locker from the 90s that shipped with most Unix workstations. The worm
+screensaver mode (`xlock -mode worm`) by David Bagley was a staple of SGI
+Indigos and Sun workstations in dimly lit server rooms everywhere.
 
 ## 🔀 Alternatives
 
-| Tool | Platform | Description |
-|------|----------|-------------|
-| [xlock / xlockmore](https://github.com/zevlg/xlockmore) | X11 / Unix | The OG screen locker with 50+ screensaver modes |
-| [vlock](https://github.com/hwhw/vlock) | Linux | Virtual console lock — locks Linux TTYs |
-| [bashlock](https://github.com/njhartwell/bashlock) | macOS / Linux | Simple bash-based terminal lock |
-| [slock](https://tools.suckless.org/slock/) | X11 | Suckless screen locker — minimal, no frills |
+| Tool                                                    | Platform      | Description                                     |
+| ------------------------------------------------------- | ------------- | ----------------------------------------------- |
+| [xlock / xlockmore](https://github.com/zevlg/xlockmore) | X11 / Unix    | The OG screen locker with 50+ screensaver modes |
+| [vlock](https://github.com/hwhw/vlock)                  | Linux         | Virtual console lock — locks Linux TTYs         |
+| [bashlock](https://github.com/njhartwell/bashlock)      | macOS / Linux | Simple bash-based terminal lock                 |
+| [slock](https://tools.suckless.org/slock/)              | X11           | Suckless screen locker — minimal, no frills     |
 
 ## 🗺️ Roadmap
 
@@ -196,6 +206,6 @@ tlock is inspired by [xlock](https://linux.die.net/man/1/xlock), the classic X11
 
 ## 📄 License
 
-The [MIT][] License.
+The [MIT] License.
 
-[MIT]: LICENSE
+[mit]: LICENSE

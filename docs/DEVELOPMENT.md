@@ -23,10 +23,10 @@ just deps     # Install tool dependencies
 just deps          # Install all dependencies
 just test          # Run all tests (lint + format check + unit + coverage)
 just ready         # Format, lint before committing
-just go::unit      # Run unit tests only
-just go::vet       # Run golangci-lint
-just go::fmt       # Auto-format (gofumpt + golines)
-just just::fmt     # Format justfiles
+just go-unit       # Run unit tests only
+just go-vet        # Run golangci-lint
+just go-fmt        # Auto-format (gofumpt + golines)
+just just-fmt      # Format justfiles
 ```
 
 ## Running
