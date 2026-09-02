@@ -15,11 +15,6 @@ md_site_dir := ""
 
 go_coverage_target := "0"
 
-# docs/superpowers/ is a dated archive of plans and designs. It records what was
-# decided at the time, so it is left as written rather than reformatted.
-
-md_extra_excludes := "--exclude 'docs/superpowers/**'"
-
 # --- Fetch ---
 
 # Fetch shared justfiles from osapi-justfiles
