@@ -177,7 +177,7 @@ authentication. 🔐
 ## 📋 Requirements
 
 - 🍎 macOS (uses LocalAuthentication.framework and PAM)
-- 🐹 Go 1.21+ with CGo enabled
+- 🐹 Go 1.27.3+ with CGo enabled
 - 🖐️ Touch ID hardware (optional — password fallback always available)
 
 ## 💡 Inspiration
