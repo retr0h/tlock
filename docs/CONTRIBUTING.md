@@ -57,7 +57,7 @@ docs: update README with new configuration options
 ### Prerequisites
 
 - macOS (required — uses LocalAuthentication.framework and PAM)
-- Go 1.21+ with CGo enabled
+- Go 1.27.3+ with CGo enabled
 - Touch ID hardware (optional for development — password fallback works without
   it)
 
