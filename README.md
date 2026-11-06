@@ -204,6 +204,12 @@ Indigos and Sun workstations in dimly lit server rooms everywhere.
 - [x] 🎲 Random screensaver selection with `--cycle` rotation
 - [ ] 🔐 1Password CLI integration
 
+## 📖 Documentation
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for setup, testing and
+architecture, and [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for the pull
+request workflow.
+
 ## 📄 License
 
 The [MIT] License.

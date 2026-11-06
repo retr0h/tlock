@@ -44,30 +44,38 @@ unlock. Signals (Ctrl+C, Ctrl+Z) are ignored by design.
 Single-binary Go program using CGo for macOS system integration:
 
 ```
-main.go
-├── CGo preamble (Objective-C)
-│   ├── touchid_available()     — check if Touch ID hardware is present
-│   ├── authenticate_touchid()  — biometric auth via LocalAuthentication.framework
-│   └── authenticate_password() — password auth via PAM
-├── Styles (lipgloss)
-│   ├── lockTitleStyle          — bold purple
-│   ├── subtitleStyle           — gray for hints
-│   ├── promptStyle             — teal for prompts
-│   ├── errorStyle              — bold red for failures
-│   ├── msgBoxStyle             — glitch border box (teal)
-│   └── errBoxStyle             — glitch border box (red)
-├── Terminal helpers
-│   ├── clearScreen()           — ANSI escape to clear
-│   ├── hideCursor/showCursor() — ANSI cursor visibility
-│   ├── centerText()            — center text horizontally
-│   ├── centerBlock()           — center multi-line block
-│   └── getTermSize()           — terminal dimensions
-├── Rendering
-│   ├── renderLockScreen()      — clears screen
-│   ├── renderMessage()         — boxed status messages
-│   └── readPassword()          — password input with blinking cursor (Esc → Touch ID)
-└── main()                      — entry point, auth loop
+main.go                   # entry point, calls cmd.Execute()
+cmd/
+├── root.go               # `tlock` flags (--worms, --pipes, --dvd, --random,
+│                         #   --cycle, --delay), builds tlock.Config
+└── version.go            # `tlock version`
+internal/cli/
+└── theme.go              # CLI-only output theme, used by cmd/ only
+internal/tlock/
+├── lock.go               # Run(): raw mode, signals, stdin reader, dispatch
+├── auth.go               # CGo preamble: touchid_available(),
+│                         #   authenticate_touchid(), authenticate_password();
+│                         #   readPasswordOverlay() with blinking cursor
+├── style.go              # teal/gray/red palette, glitch border boxes,
+│                         #   renderMessage()
+├── terminal.go           # clearScreen, hide/showCursor, centerText,
+│                         #   centerBlock, getTermSize, drawLockIcon
+├── grid.go               # 3x2-character grid cells, block drawing,
+│                         #   wormColors phosphor palette
+├── screensaver.go        # screensaver interface, factory map, random pick
+├── screensaver_worm.go   # worms (xlock-style)
+├── screensaver_pipes.go  # growing pipes
+└── screensaver_dvd.go    # bouncing padlock
 ```
+
+The password prompt is the default lock screen, and Esc switches to Touch ID.
+The password cursor is a block (`\u2588`) that blinks every 500ms. Status and
+error messages render in boxes with a glitch border built from
+`\u2591\u2592\u2593\u2588`.
+
+The UI palette is three colors in `style.go`: teal `#06ffa5` for accents,
+prompts and the cursor, gray `245` for hints, and red `196` for errors. The
+screensavers share the 13-color retro phosphor palette in `wormColors`.
 
 ## Dependencies
 
