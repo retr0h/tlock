@@ -22,6 +22,10 @@ md_extra_excludes := "--exclude 'docs/superpowers/**'"
 
 # --- Fetch ---
 
+# List the recipes
+default:
+    @just --list
+
 # Fetch shared justfiles from osapi-justfiles
 fetch:
     mkdir -p .just/remote
